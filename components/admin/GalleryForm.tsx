@@ -54,23 +54,23 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         <form action={isEditing ? updateGallery.bind(null, gallery.id) : createGallery} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50">Naslov Galerije</label>
-                    <Input name="title" defaultValue={gallery?.title} placeholder="npr. Ana & Mark" required className="bg-white/5 border-white/10" />
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Naslov Galerije</label>
+                    <Input name="title" defaultValue={gallery?.title} placeholder="npr. Ana & Mark" required className="bg-white/5 border-white/10 font-dm" />
                 </div>
                 <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50">Datum (YYYY-MM-DD)</label>
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Datum (YYYY-MM-DD)</label>
                     <Input name="date" type="date" defaultValue={gallery?.date} required className="bg-white/5 border-white/10" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50">Opis</label>
-                    <Input name="description" defaultValue={gallery?.description} placeholder="Kratek opis dogodka..." className="bg-white/5 border-white/10" />
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Opis</label>
+                    <Input name="description" defaultValue={gallery?.description} placeholder="Kratek opis dogodka..." className="bg-white/5 border-white/10 font-dm" />
                 </div>
                 <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50">Geslo (opcijsko)</label>
-                    <Input name="password" defaultValue={gallery?.password} placeholder="Pusti prazno za javno" className="bg-white/5 border-white/10" />
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Geslo (opcijsko)</label>
+                    <Input name="password" defaultValue={gallery?.password} placeholder="Pusti prazno za javno" className="bg-white/5 border-white/10 font-dm" />
                 </div>
                 <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50">Cover Slika URL</label>
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Cover Slika URL</label>
                     <div className="flex gap-2">
                         <Input
                             name="coverImage"
@@ -78,7 +78,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                             onChange={(e) => setCoverImage(e.target.value)}
                             placeholder="https://..."
                             required
-                            className="bg-white/5 border-white/10"
+                            className="bg-white/5 border-white/10 font-dm"
                         />
                         {coverImage && (
                             <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden border border-white/20">
@@ -91,19 +91,19 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
             {/* Nextcloud Import */}
             <div className="bg-blue-900/10 border border-blue-500/20 p-6 rounded-lg space-y-4">
-                <h3 className="text-sm font-bold uppercase text-blue-400">Uvozi iz oblaka (Nextcloud)</h3>
+                <h3 className="text-sm font-bold uppercase text-blue-400 font-dm">Uvozi iz oblaka (Nextcloud)</h3>
                 <div className="flex gap-2">
                     <Input
                         value={ncLink}
                         onChange={(e) => setNcLink(e.target.value)}
                         placeholder="https://cloud.yoursite.com/s/Token..."
-                        className="bg-black/20 border-blue-500/20"
+                        className="bg-black/20 border-blue-500/20 font-dm"
                     />
-                    <Button type="button" onClick={handleNextcloudImport} disabled={isImporting} className="bg-blue-600 hover:bg-blue-500 text-white min-w-[120px]">
+                    <Button type="button" onClick={handleNextcloudImport} disabled={isImporting} className="bg-blue-600 hover:bg-blue-500 text-white min-w-[120px] font-dm">
                         {isImporting ? 'Nalagam...' : 'Uvozi'}
                     </Button>
                 </div>
-                <p className="text-[10px] text-white/30">
+                <p className="text-[10px] text-white/30 font-dm">
                     Prilepi "Public Share Link" iz Nextcloud-a. Sistem bo avtomatsko poiskal vse slike.
                 </p>
             </div>
@@ -120,9 +120,9 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                         value={newPhotoUrl}
                         onChange={(e) => setNewPhotoUrl(e.target.value)}
                         placeholder="Prilepi URL slike (npr. Unsplash/Imgur)"
-                        className="bg-white/5 border-white/10"
+                        className="bg-white/5 border-white/10 font-dm"
                     />
-                    <Button type="button" onClick={handleAddPhoto} className="bg-white text-black">
+                    <Button type="button" onClick={handleAddPhoto} className="bg-white text-black font-dm">
                         <Plus className="w-4 h-4" /> Dodaj
                     </Button>
                 </div>
@@ -177,7 +177,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     type="submit"
                     size="lg"
                     disabled={isImporting}
-                    className="bg-white text-black uppercase tracking-widest text-sm w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-white text-black uppercase tracking-widest text-sm w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed font-dm font-bold"
                 >
                     {isEditing ? 'Shrani Spremembe' : 'Ustvari Galerijo'}
                 </Button>

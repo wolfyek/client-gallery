@@ -17,18 +17,18 @@ export default async function AdminDashboard() {
                             <h1 className="text-3xl font-bold uppercase tracking-tighter">Nadzorna Plošča</h1>
                             <LogoutButton />
                         </div>
-                        <Link href="/" className="flex items-center gap-1 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors w-fit">
+                        <Link href="/" className="flex items-center gap-1 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors w-fit font-dm">
                             <ArrowLeft className="w-3 h-3" /> Nazaj na stran
                         </Link>
                     </div>
                     <div className="flex gap-4">
                         <Link href="/admin/logs">
-                            <Button className="bg-[#1e1e1e] border border-white/20 text-white hover:bg-white/10 uppercase tracking-widest gap-2">
+                            <Button className="bg-[#1e1e1e] border border-white/20 text-white hover:bg-white/10 uppercase tracking-widest gap-2 font-dm">
                                 <Activity className="w-4 h-4" /> Dnevniki
                             </Button>
                         </Link>
                         <Link href="/admin/ustvari">
-                            <Button className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest gap-2">
+                            <Button className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest gap-2 font-dm font-bold">
                                 <Plus className="w-4 h-4" /> Nova Galerija
                             </Button>
                         </Link>
@@ -43,11 +43,11 @@ export default async function AdminDashboard() {
                         >
                             <div className="flex flex-col space-y-1">
                                 <h3 className="text-xl font-bold uppercase">{gallery.title}</h3>
-                                <p className="text-xs text-white/50 tracking-widest">{gallery.date}</p>
+                                <p className="text-xs text-white/50 tracking-widest font-dm">{gallery.date}</p>
                             </div>
 
                             <div className="flex items-center gap-4">
-                                <Link href={`/galerija/${gallery.id}`} target="_blank" className="text-sm text-white/50 hover:text-white underline">
+                                <Link href={`/galerija/${gallery.id}`} target="_blank" className="text-sm text-white/50 hover:text-white underline font-dm">
                                     Poglej Galerijo
                                 </Link>
                                 <Link href={`/admin/uredi/${gallery.id}`}>

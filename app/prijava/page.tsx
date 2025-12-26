@@ -44,20 +44,20 @@ export default function LoginPage() {
                         placeholder="Uporabniško ime"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 ${error ? 'border-red-500' : ''}`}
+                        className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 font-dm ${error ? 'border-red-500' : ''}`}
                     />
                     <Input
                         type="password"
                         placeholder="Geslo"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 ${error ? 'border-red-500' : ''}`}
+                        className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 font-dm ${error ? 'border-red-500' : ''}`}
                     />
-                    <Button type="submit" className="w-full uppercase tracking-widest bg-white text-black hover:bg-gray-200">
+                    <Button type="submit" className="w-full uppercase tracking-widest bg-white text-black hover:bg-gray-200 font-dm font-bold">
                         Vstopi
                     </Button>
                     {error && (
-                        <p className="text-xs text-red-500 text-center uppercase tracking-widest font-bold">
+                        <p className="text-xs text-red-500 text-center uppercase tracking-widest font-bold font-dm">
                             Napačno uporabniško ime ali geslo
                         </p>
                     )}
