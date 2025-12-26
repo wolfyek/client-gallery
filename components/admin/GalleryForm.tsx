@@ -18,12 +18,15 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [downloadable, setDownloadable] = useState(gallery?.downloadable ?? true);
     const isEditing = !!gallery;
 
+    const [hasPhotosChanged, setHasPhotosChanged] = useState(false);
+
     const handleNextcloudImport = async () => {
         if (!ncLink) return;
         setIsImporting(true);
         try {
             const newPhotos = await importFromNextcloud(ncLink);
             setPhotos([...photos, ...newPhotos]);
+            setHasPhotosChanged(true); // Mark as changed
             setNcLink("");
             alert(`Uspešno uvoženih ${newPhotos.length} slik!`);
         } catch (e) {
@@ -44,11 +47,13 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
             alt: "Nova Slika"
         };
         setPhotos([...photos, newPhoto]);
+        setHasPhotosChanged(true); // Mark as changed
         setNewPhotoUrl("");
     };
 
     const removePhoto = (id: string) => {
         setPhotos(photos.filter(p => p.id !== id));
+        setHasPhotosChanged(true); // Mark as changed
     };
 
     return (
@@ -143,7 +148,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 type="hidden"
                 name="photos"
                 value={
-                    !isEditing || (gallery && JSON.stringify(photos) !== JSON.stringify(gallery.photos))
+                    !isEditing || hasPhotosChanged
                         ? JSON.stringify(photos)
                         : ""
                 }
