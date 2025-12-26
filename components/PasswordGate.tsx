@@ -52,7 +52,7 @@ export default function PasswordGate({
                 {/* Back Link */}
                 <Link
                     href="/"
-                    className="absolute top-8 left-8 z-20 flex items-center gap-2 text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs drop-shadow-md"
+                    className="absolute top-8 left-8 z-20 flex items-center gap-2 text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs drop-shadow-md font-dm"
                 >
                     <ArrowLeft className="w-4 h-4" /> Nazaj na galerije
                 </Link>
@@ -68,7 +68,7 @@ export default function PasswordGate({
                         <h2 className="text-3xl font-bold tracking-tighter uppercase text-center text-white">
                             {galleryTitle}
                         </h2>
-                        <p className="text-sm tracking-widest uppercase text-white/70">
+                        <p className="text-sm tracking-widest uppercase text-white/70 font-dm">
                             Zasebna Galerija
                         </p>
                     </div>
@@ -80,17 +80,17 @@ export default function PasswordGate({
                                 placeholder="Vnesite geslo"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 transition-colors ${error ? 'border-red-500/50' : ''}`}
+                                className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 transition-colors font-dm ${error ? 'border-red-500/50' : ''}`}
                             />
                         </div>
-                        <Button type="submit" className="w-full uppercase tracking-widest shadow-lg bg-white text-black hover:bg-gray-200">
+                        <Button type="submit" className="w-full uppercase tracking-widest shadow-lg bg-white text-black hover:bg-gray-200 font-dm font-bold">
                             Vstopi
                         </Button>
                         {error && (
                             <motion.p
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="text-xs text-red-500 text-center uppercase tracking-widest mt-2 font-bold"
+                                className="text-xs text-red-500 text-center uppercase tracking-widest mt-2 font-bold font-dm"
                             >
                                 Napačno geslo
                             </motion.p>

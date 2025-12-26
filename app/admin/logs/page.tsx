@@ -21,7 +21,7 @@ export default async function LogsPage() {
                             <h1 className="text-3xl font-bold uppercase tracking-tighter">Dnevniki</h1>
                             <LogoutButton />
                         </div>
-                        <Link href="/admin" className="flex items-center gap-1 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors w-fit">
+                        <Link href="/admin" className="flex items-center gap-1 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors w-fit font-dm">
                             <ArrowLeft className="w-3 h-3" /> Nazaj na Nadzorno Ploščo
                         </Link>
                     </div>
@@ -36,7 +36,7 @@ export default async function LogsPage() {
 
                     <div className="bg-[#1e1e1e] rounded-lg border border-white/10 overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm text-white/70">
+                            <table className="w-full text-left text-sm text-white/70 font-dm">
                                 <thead className="bg-white/5 uppercase tracking-widest text-xs font-bold text-white/50">
                                     <tr>
                                         <th className="p-4">E-naslov</th>
@@ -48,7 +48,7 @@ export default async function LogsPage() {
                                 <tbody className="divide-y divide-white/5">
                                     {logs.downloads.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="p-8 text-center text-white/30 italic">Ni zabeleženih prenosov.</td>
+                                            <td colSpan={4} className="p-8 text-center text-white/30 italic font-dm">Ni zabeleženih prenosov.</td>
                                         </tr>
                                     ) : (
                                         logs.downloads.map((log) => (
@@ -88,7 +88,7 @@ export default async function LogsPage() {
                     </div>
 
                     <div className="bg-[#1e1e1e] rounded-lg border border-white/10 overflow-hidden">
-                        <table className="w-full text-left text-sm text-white/70">
+                        <table className="w-full text-left text-sm text-white/70 font-dm">
                             <thead className="bg-white/5 uppercase tracking-widest text-xs font-bold text-white/50">
                                 <tr>
                                     <th className="p-4 w-32">Tip</th>
@@ -100,7 +100,7 @@ export default async function LogsPage() {
                             <tbody className="divide-y divide-white/5">
                                 {logs.activity.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="p-8 text-center text-white/30 italic">Ni zabeleženih aktivnosti.</td>
+                                        <td colSpan={4} className="p-8 text-center text-white/30 italic font-dm">Ni zabeleženih aktivnosti.</td>
                                     </tr>
                                 ) : (
                                     logs.activity.map((log) => (

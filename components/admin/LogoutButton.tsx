@@ -17,7 +17,7 @@ export default function LogoutButton() {
         <Button
             onClick={handleLogout}
             variant="ghost"
-            className="text-white/50 hover:text-red-500 hover:bg-red-900/10 uppercase tracking-widest text-xs gap-2"
+            className="text-white/50 hover:text-red-500 hover:bg-red-900/10 uppercase tracking-widest text-xs gap-2 font-dm"
         >
             <LogOut className="w-4 h-4" /> Odjava
         </Button>
