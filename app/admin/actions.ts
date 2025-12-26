@@ -134,7 +134,6 @@ export async function updateGallery(id: string, formData: FormData) {
     const photosJson = formData.get("photos") as string;
 
     let photos = existing.photos;
-    let photos = existing.photos;
     try {
         console.log(`Update payload for ${id}: Photos JSON length=${photosJson?.length}`);
         if (photosJson) {
