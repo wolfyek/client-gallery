@@ -31,7 +31,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                                 placeholder="ISKANJE..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                className="w-full bg-transparent border-b border-white/80 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white transition-colors placeholder:text-white/60 uppercase tracking-widest"
+                                className="w-full bg-transparent border-b border-white/80 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white transition-colors placeholder:text-white/60 uppercase tracking-widest font-dm"
                             />
                         </div>
                     </div>
