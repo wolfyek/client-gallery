@@ -1,0 +1,43 @@
+{
+  "activity": [
+    {
+      "id": "0f4fcc11-7cbf-4369-8a8c-a8e8e4158022",
+      "type": "DELETE_GALLERY",
+      "description": "Izbrisana galerija: T",
+      "user": "farkas",
+      "timestamp": "2025-12-26T21:29:09.420Z"
+    },
+    {
+      "id": "bdbc9e8a-77cb-4f58-a811-7650f03653d6",
+      "type": "UPDATE_GALLERY",
+      "description": "Updated gallery: Ben Maj Koncert (Total: 39 photos)",
+      "user": "admin",
+      "timestamp": "2025-12-26T20:41:08.585Z"
+    },
+    {
+      "id": "79bc1f0d-043c-40a6-8866-5b57eaad40ca",
+      "type": "CREATE_GALLERY",
+      "description": "Created gallery: Radensko poletje - Severina (53 photos)",
+      "user": "admin",
+      "timestamp": "2025-12-26T20:28:54.516Z"
+    },
+    {
+      "id": "12f1fedf-2c0f-4829-aa30-710a26c84680",
+      "type": "CREATE_GALLERY",
+      "description": "Created gallery: T (20 photos)",
+      "user": "admin",
+      "timestamp": "2025-12-26T20:23:47.328Z"
+    }
+  ],
+  "downloads": [
+    {
+      "id": "580c7d7e-d535-4840-ae41-8a4f0c84e530",
+      "email": "",
+      "galleryTitle": "Radensko poletje - Severina",
+      "photoId": "luvfqzlwi",
+      "photoSrc": "https://nc.netmedia.si:440/index.php/apps/files_sharing/publicpreview/7iMQpYPKyLy3pm9?file=/Obcinski-praznik-Loncarovci-2024-08.jpg&x=1920&y=1080&a=true",
+      "photoName": "Obcinski-praznik-Loncarovci-2024-08.jpg",
+      "timestamp": "2025-12-26T20:29:27.466Z"
+    }
+  ]
+}
