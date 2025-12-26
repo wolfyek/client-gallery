@@ -35,13 +35,13 @@ export default function RootLayout({
                     <div className="w-full h-[1px] bg-white/10" />
                 </div>
 
-                <footer className="w-full max-w-[1400px] mx-auto px-4 md:px-8 py-16 flex flex-col md:flex-row justify-between items-center gap-8 text-[13px] text-white/40 font-dm font-normal uppercase tracking-widest">
+                <footer className="w-full max-w-[1400px] mx-auto px-4 md:px-8 py-16 flex flex-col md:flex-row justify-between items-center gap-8 text-[13px] text-white/40 font-dm font-normal uppercase tracking-widest text-center md:text-left">
                     <p>Vse pravice pridržane, Farkaš Timi Photography 2025 ©</p>
 
                     <img
                         src="https://streznik.farkastimi.si/Farkas-LOGO-footer.png"
                         alt="Farkaš Timi Footer Logo"
-                        className="h-12 w-auto opacity-50 hover:opacity-100 transition-opacity"
+                        className="hidden md:block h-12 w-auto opacity-50 hover:opacity-100 transition-opacity"
                     />
 
                     <p>Stran ustvaril z srcem, sam.</p>
