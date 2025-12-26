@@ -92,6 +92,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     <Input
                         type="checkbox"
                         name="downloadable"
+                        value="on" // Explicitly valid for form submission
                         checked={downloadable}
                         onChange={(e) => setDownloadable(e.target.checked)}
                         className="w-5 h-5 accent-white cursor-pointer"
@@ -127,7 +128,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 type="hidden"
                 name="photos"
                 value={
-                    !isEditing || JSON.stringify(photos) !== JSON.stringify(gallery.photos)
+                    !isEditing || (gallery && JSON.stringify(photos) !== JSON.stringify(gallery.photos))
                         ? JSON.stringify(photos)
                         : ""
                 }
