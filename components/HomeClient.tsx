@@ -40,7 +40,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                     <div className="flex flex-col items-center justify-center space-y-6">
                         <Link href="/" className="cursor-pointer">
                             <img
-                                src="http://galerija.farkastimi.si/Farkas-LOGO.svg"
+                                src="http://streznik.farkastimi.si/Farkas-LOGO.svg"
                                 alt="Farkaš Timi Logo"
                                 className="h-20 md:h-28 w-auto hover:opacity-80 transition-opacity"
                             />

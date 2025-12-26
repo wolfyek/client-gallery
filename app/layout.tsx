@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     title: "Galerija - Farkaš Timi",
     description: "Private client photography gallery",
     icons: {
-        icon: "http://galerija.farkastimi.si/Farkas-LOGO.svg",
-        shortcut: "http://galerija.farkastimi.si/Farkas-LOGO.svg",
+        icon: "http://streznik.farkastimi.si/Farkas-LOGO.svg",
+        shortcut: "http://streznik.farkastimi.si/Farkas-LOGO.svg",
     },
 };
 
@@ -40,7 +40,7 @@ export default function RootLayout({
 
                     {/* Footer Logo */}
                     <img
-                        src="https://galerija.farkastimi.si/Farkas-LOGO-footer.png"
+                        src="https://streznik.farkastimi.si/Farkas-LOGO-footer.png"
                         alt="Farkaš Timi Footer Logo"
                         className="h-12 w-auto opacity-50 hover:opacity-100 transition-opacity"
                     />
