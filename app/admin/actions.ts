@@ -134,8 +134,15 @@ export async function updateGallery(id: string, formData: FormData) {
     const photosJson = formData.get("photos") as string;
 
     let photos = existing.photos;
+    let photos = existing.photos;
     try {
-        if (photosJson) photos = JSON.parse(photosJson);
+        console.log(`Update payload for ${id}: Photos JSON length=${photosJson?.length}`);
+        if (photosJson) {
+            photos = JSON.parse(photosJson);
+            console.log(`Parsed ${photos.length} photos.`);
+        } else {
+            console.log("No photos JSON provided, keeping existing.");
+        }
     } catch (e) {
         console.error("Failed to parse photos", e);
     }
