@@ -10,7 +10,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { recordDownload } from "@/app/actions/logging";
 
-export default function GalleryGrid({ photos, galleryTitle }: { photos: Photo[], galleryTitle: string }) {
+export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean }) {
     const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
     const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
     const [isZipping, setIsZipping] = useState(false);
@@ -145,24 +145,26 @@ export default function GalleryGrid({ photos, galleryTitle }: { photos: Photo[],
             {/* Toolbar */}
             <div className="sticky top-[80px] z-40 flex justify-between items-center px-4 md:px-8 pb-4 mix-blend-difference">
 
-                {/* Download All Button */}
-                <button
-                    onClick={handleDownloadAll}
-                    disabled={isZipping}
-                    className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg py-2 px-4 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-all uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-wait"
-                >
-                    {isZipping ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Pripravljam ({zipProgress}%)</span>
-                        </>
-                    ) : (
-                        <>
-                            <Archive className="w-4 h-4" />
-                            <span>Prenesi Vse</span>
-                        </>
-                    )}
-                </button>
+                {/* Download All Button - Only show if downloads allowed */}
+                {allowDownloads && (
+                    <button
+                        onClick={handleDownloadAll}
+                        disabled={isZipping}
+                        className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg py-2 px-4 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-all uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-wait font-dm"
+                    >
+                        {isZipping ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>Pripravljam ({zipProgress}%)</span>
+                            </>
+                        ) : (
+                            <>
+                                <Archive className="w-4 h-4" />
+                                <span>Prenesi Vse</span>
+                            </>
+                        )}
+                    </button>
+                )}
 
                 {/* View Switcher */}
                 <div className="flex bg-white/10 backdrop-blur-md rounded-lg p-1 gap-1 border border-white/10">
@@ -221,7 +223,14 @@ export default function GalleryGrid({ photos, galleryTitle }: { photos: Photo[],
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             {/* Overlay */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+                            <div
+                                className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200"
+                                onContextMenu={(e) => {
+                                    if (!allowDownloads) {
+                                        e.preventDefault();
+                                    }
+                                }}
+                            />
                         </div>
                     </motion.div>
                 ))}
@@ -263,6 +272,11 @@ export default function GalleryGrid({ photos, galleryTitle }: { photos: Photo[],
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.3 }}
                                     className="relative w-full h-full"
+                                    onContextMenu={(e) => {
+                                        if (!allowDownloads) {
+                                            e.preventDefault();
+                                        }
+                                    }}
                                 >
                                     <Image
                                         src={selectedPhoto.src}
@@ -275,15 +289,17 @@ export default function GalleryGrid({ photos, galleryTitle }: { photos: Photo[],
                                 </motion.div>
 
                                 {/* Download Button */}
-                                <div className="absolute bottom-4 z-50">
-                                    <button
-                                        onClick={handleDownload}
-                                        className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs py-3 px-6 border border-white/10 hover:border-white/30 rounded-full hover:bg-black/70"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        PRENESI
-                                    </button>
-                                </div>
+                                {allowDownloads && (
+                                    <div className="absolute bottom-4 z-50">
+                                        <button
+                                            onClick={handleDownload}
+                                            className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs py-3 px-6 border border-white/10 hover:border-white/30 rounded-full hover:bg-black/70 font-dm"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            PRENESI
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Right Arrow */}

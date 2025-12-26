@@ -13,5 +13,6 @@ export type Gallery = {
     date: string;
     coverImage: string;
     password?: string; // If undefined, it's public
+    downloadable?: boolean; // Defaults to true if undefined
     photos: Photo[];
 };

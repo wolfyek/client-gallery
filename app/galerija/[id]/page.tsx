@@ -53,7 +53,11 @@ export default async function GalleryPage({ params }: { params: { id: string } }
                 </header>
 
                 {/* Gallery Content */}
-                <GalleryGrid photos={gallery.photos} galleryTitle={gallery.title} />
+                <GalleryGrid
+                    photos={gallery.photos}
+                    galleryTitle={gallery.title}
+                    allowDownloads={gallery.downloadable ?? true} // Default to true for existing galleries
+                />
 
                 {/* Footer */}
                 <footer className="py-24 text-center text-white/20 text-xs uppercase tracking-widest">

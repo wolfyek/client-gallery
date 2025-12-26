@@ -15,6 +15,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [ncLink, setNcLink] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const [coverImage, setCoverImage] = useState(gallery?.coverImage || "");
+    const [downloadable, setDownloadable] = useState(gallery?.downloadable ?? true);
     const isEditing = !!gallery;
 
     const handleNextcloudImport = async () => {
@@ -86,6 +87,18 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                             </div>
                         )}
                     </div>
+                </div>
+                <div className="space-y-2 flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-4 mt-6 h-[50px]">
+                    <Input
+                        type="checkbox"
+                        name="downloadable"
+                        checked={downloadable}
+                        onChange={(e) => setDownloadable(e.target.checked)}
+                        className="w-5 h-5 accent-white cursor-pointer"
+                    />
+                    <label className="text-xs uppercase tracking-widest text-white/70 font-dm cursor-pointer" onClick={() => setDownloadable(!downloadable)}>
+                        Dovoli Prenose (Download)
+                    </label>
                 </div>
             </div>
 
