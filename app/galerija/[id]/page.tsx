@@ -59,10 +59,7 @@ export default async function GalleryPage({ params }: { params: { id: string } }
                     allowDownloads={gallery.downloadable ?? true} // Default to true for existing galleries
                 />
 
-                {/* Footer */}
-                <footer className="py-24 text-center text-white/20 text-xs uppercase tracking-widest font-dm">
-                    Farkaš Timi Fotografija
-                </footer>
+
             </main>
         </PasswordGate>
     );
