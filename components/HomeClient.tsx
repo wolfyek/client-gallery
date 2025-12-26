@@ -98,29 +98,28 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                         <div className="w-full max-w-xs h-[1px] bg-white/20" />
                     </div>
 
-                    {/* Category Filter */}
-                    <div className="flex flex-wrap justify-center gap-4">
-                        <button
-                            onClick={() => setCategory("")}
-                            className={`px-4 py-1.5 text-xs uppercase tracking-widest transition-all rounded-full border ${!category
-                                ? "bg-white text-black border-white font-bold"
-                                : "bg-transparent text-white/50 border-white/10 hover:border-white/30 hover:text-white"
-                                }`}
-                        >
-                            Vse
-                        </button>
-                        {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                onClick={() => setCategory(cat)}
-                                className={`px-4 py-1.5 text-xs uppercase tracking-widest transition-all rounded-full border ${category === cat
-                                    ? "bg-white text-black border-white font-bold"
-                                    : "bg-transparent text-white/50 border-white/10 hover:border-white/30 hover:text-white"
-                                    }`}
+                    {/* Category Filter Dropdown */}
+                    <div className="relative w-full max-w-[200px]">
+                        <div className="relative">
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full appearance-none bg-[#121212] border border-white/20 rounded-md py-3 pl-4 pr-10 text-sm text-white uppercase tracking-widest font-dm focus:outline-none focus:border-white transition-colors cursor-pointer text-center"
                             >
-                                {cat}
-                            </button>
-                        ))}
+                                <option value="">KATEGORIJA</option>
+                                <option value="">VSE</option>
+                                {categories.map((cat) => (
+                                    <option key={cat} value={cat}>
+                                        {cat.toUpperCase()}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-white/50">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
