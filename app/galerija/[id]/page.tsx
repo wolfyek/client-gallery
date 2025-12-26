@@ -37,7 +37,7 @@ export default async function GalleryPage({ params }: { params: { id: string } }
 
                 {/* Hero / Header Section */}
                 <header className="pt-32 pb-16 px-6 text-center max-w-4xl mx-auto space-y-6">
-                    <span className="text-xs tracking-[0.3em] uppercase text-white/60">
+                    <span className="text-xs tracking-[0.3em] uppercase text-white/60 font-dm">
                         {formatSlovenianDate(gallery.date)}
                     </span>
 
@@ -45,7 +45,7 @@ export default async function GalleryPage({ params }: { params: { id: string } }
                         {gallery.title}
                     </h1>
 
-                    <p className="text-lg md:text-xl text-white/70 font-light max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg md:text-xl text-white/70 font-light max-w-2xl mx-auto leading-relaxed font-dm">
                         {gallery.description}
                     </p>
 
@@ -60,7 +60,7 @@ export default async function GalleryPage({ params }: { params: { id: string } }
                 />
 
                 {/* Footer */}
-                <footer className="py-24 text-center text-white/20 text-xs uppercase tracking-widest">
+                <footer className="py-24 text-center text-white/20 text-xs uppercase tracking-widest font-dm">
                     Farkaš Timi Fotografija
                 </footer>
             </main>
