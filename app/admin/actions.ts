@@ -183,8 +183,6 @@ export async function updateGalleryMetadata(
         description?: string;
     }
 ) {
-}
-) {
     try {
         console.log(`[MetadataUpdate] Starting for ${id}`, data);
         const existing = await getGallery(id);
