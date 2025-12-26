@@ -39,9 +39,9 @@ export default function RootLayout({
                     <p>Vse pravice pridržane, Farkaš Timi Photography 2025 ©</p>
 
                     <img
-                        src="/signature.png"
-                        alt="Farkaš Timi Photography"
-                        className="h-20 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                        src="https://streznik.farkastimi.si/Farkas-LOGO-footer.png"
+                        alt="Farkaš Timi Footer Logo"
+                        className="h-12 w-auto opacity-50 hover:opacity-100 transition-opacity"
                     />
 
                     <p>Stran ustvaril z srcem, sam.</p>
