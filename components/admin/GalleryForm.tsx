@@ -62,6 +62,14 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
+        // DEBUG: Alert the data being sent
+        const debugData = {
+            title: formData.get("title"),
+            category: formData.get("category"),
+            downloadable: downloadable,
+        };
+        alert(`DEBUG: Sending: ${JSON.stringify(debugData)}`);
+
         if (isEditing && !hasPhotosChanged) {
             // OPTIMIZED PATH: Metadata only
             try {
