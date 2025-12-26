@@ -10,17 +10,22 @@ import { type Gallery } from "@/lib/data";
 
 export default function HomeClient({ initialGalleries }: { initialGalleries: Gallery[] }) {
     const [query, setQuery] = useState("");
+    const [category, setCategory] = useState("");
 
-    const filteredGalleries = initialGalleries.filter(g =>
-        g.title.toLowerCase().includes(query.toLowerCase())
-    );
+    const filteredGalleries = initialGalleries.filter(g => {
+        const matchesQuery = g.title.toLowerCase().includes(query.toLowerCase());
+        const matchesCategory = category ? g.category === category : true;
+        return matchesQuery && matchesCategory;
+    });
+
+    const categories = ["Poroka", "Krst", "Rojstni dan", "Koncert", "Ostalo"];
 
     return (
         <main className="min-h-screen bg-[#121212] text-white pt-8">
             <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pb-8">
 
                 {/* Header Section */}
-                <div className="relative mb-12 grid grid-cols-1 md:grid-cols-3 items-center gap-8">
+                <div className="relative mb-8 grid grid-cols-1 md:grid-cols-3 items-center gap-8">
 
                     {/* Search - Left Aligned (Desktop) */}
                     <div className="hidden md:flex flex-col justify-start">
@@ -84,12 +89,39 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                     </div>
                 </div>
 
-                {/* Subtitle - Separated and Pushed Down */}
-                <div className="flex flex-col items-center justify-center mb-16 gap-6">
-                    <p className="text-[32px] text-white uppercase font-sans font-bold text-center">
-                        galerija fotografij
-                    </p>
-                    <div className="w-full max-w-xs h-[1px] bg-white/20" />
+                {/* Subtitle & Filter section */}
+                <div className="flex flex-col items-center justify-center mb-12 gap-8">
+                    <div className="flex flex-col items-center gap-6">
+                        <p className="text-[32px] text-white uppercase font-sans font-bold text-center">
+                            galerija fotografij
+                        </p>
+                        <div className="w-full max-w-xs h-[1px] bg-white/20" />
+                    </div>
+
+                    {/* Category Filter */}
+                    <div className="flex flex-wrap justify-center gap-4">
+                        <button
+                            onClick={() => setCategory("")}
+                            className={`px-4 py-1.5 text-xs uppercase tracking-widest transition-all rounded-full border ${!category
+                                ? "bg-white text-black border-white font-bold"
+                                : "bg-transparent text-white/50 border-white/10 hover:border-white/30 hover:text-white"
+                                }`}
+                        >
+                            Vse
+                        </button>
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setCategory(cat)}
+                                className={`px-4 py-1.5 text-xs uppercase tracking-widest transition-all rounded-full border ${category === cat
+                                    ? "bg-white text-black border-white font-bold"
+                                    : "bg-transparent text-white/50 border-white/10 hover:border-white/30 hover:text-white"
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Galleries Grid */}

@@ -92,6 +92,7 @@ export async function createGallery(formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const downloadable = formData.get("downloadable") === "on";
+    const category = formData.get("category") as string;
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const photosJson = formData.get("photos") as string;
 
@@ -110,6 +111,7 @@ export async function createGallery(formData: FormData) {
         password,
         coverImage,
         downloadable,
+        category,
         photos
     };
 
@@ -131,6 +133,7 @@ export async function updateGallery(id: string, formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const downloadable = formData.get("downloadable") === "on";
+    const category = formData.get("category") as string;
     const photosJson = formData.get("photos") as string;
 
     let photos = existing.photos;
@@ -154,6 +157,7 @@ export async function updateGallery(id: string, formData: FormData) {
         password,
         coverImage,
         downloadable,
+        category,
         photos
     };
 

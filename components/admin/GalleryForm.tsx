@@ -59,6 +59,21 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     <Input name="title" defaultValue={gallery?.title} placeholder="npr. Ana & Mark" required className="bg-white/5 border-white/10 font-dm" />
                 </div>
                 <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Kategorija</label>
+                    <select
+                        name="category"
+                        defaultValue={gallery?.category || ""}
+                        className="flex h-11 w-full rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/50 font-dm appearance-none"
+                    >
+                        <option value="" className="bg-[#121212] text-white/50">Brez Kategorije</option>
+                        <option value="Poroka" className="bg-[#121212]">Poroka</option>
+                        <option value="Krst" className="bg-[#121212]">Krst</option>
+                        <option value="Rojstni dan" className="bg-[#121212]">Rojstni dan</option>
+                        <option value="Koncert" className="bg-[#121212]">Koncert</option>
+                        <option value="Ostalo" className="bg-[#121212]">Ostalo</option>
+                    </select>
+                </div>
+                <div className="space-y-2">
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Datum (YYYY-MM-DD)</label>
                     <Input name="date" type="date" defaultValue={gallery?.date} required className="bg-white/5 border-white/10" />
                 </div>
