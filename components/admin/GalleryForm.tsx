@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Gallery, Photo } from "@/lib/data";
-import { createGallery, updateGallery, importFromNextcloud } from "@/app/admin/actions";
+import { createGallery, updateGallery, updateGalleryMetadata, importFromNextcloud } from "@/app/admin/actions";
 import { X, Plus, Image as ImageIcon, Download, Star, Check } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -54,6 +54,36 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const removePhoto = (id: string) => {
         setPhotos(photos.filter(p => p.id !== id));
         setHasPhotosChanged(true); // Mark as changed
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        if (isEditing && !hasPhotosChanged) {
+            // OPTIMIZED PATH: Metadata only
+            try {
+                await updateGalleryMetadata(gallery.id, {
+                    title: formData.get("title") as string,
+                    date: formData.get("date") as string,
+                    password: formData.get("password") as string,
+                    coverImage: formData.get("coverImage") as string,
+                    downloadable: downloadable,
+                    category: formData.get("category") as string,
+                    description: formData.get("description") as string,
+                });
+                alert("Spremembe shranjene (Metapodatki)!");
+                window.location.href = "/admin"; // Manual redirect
+            } catch (err) {
+                console.error(err);
+                alert("Napaka pri shranjevanju metapodatkov.");
+            }
+        } else {
+            // FULL PATH: Create or Update with Photos
+            // We use the hidden input 'photos' which is already managed by our state
+            const action = isEditing ? updateGallery.bind(null, gallery.id) : createGallery;
+            await action(formData);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

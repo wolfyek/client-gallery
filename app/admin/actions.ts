@@ -167,7 +167,45 @@ export async function updateGallery(id: string, formData: FormData) {
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath(`/galerija/${id}`);
+    revalidatePath(`/galerija/${id}`);
     redirect("/admin");
+}
+
+export async function updateGalleryMetadata(
+    id: string,
+    data: {
+        title: string;
+        date: string;
+        password?: string;
+        coverImage: string;
+        downloadable: boolean;
+        category?: string;
+        description?: string;
+    }
+) {
+    const existing = await getGallery(id);
+    if (!existing) throw new Error("Gallery not found");
+
+    const updated: Gallery = {
+        ...existing,
+        title: data.title,
+        date: data.date,
+        password: data.password || undefined,
+        coverImage: data.coverImage,
+        downloadable: data.downloadable,
+        category: data.category || undefined,
+        description: data.description || "",
+        // photos are untouched
+    };
+
+    await saveGallery(updated);
+    await logActivity('UPDATE_GALLERY', `Updated metadata: ${data.title}`);
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath(`/galerija/${id}`);
+    // No redirect returned so client can handle it
+    return { success: true };
 }
 
 export async function removeGallery(id: string) {
