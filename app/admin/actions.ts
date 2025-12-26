@@ -183,29 +183,39 @@ export async function updateGalleryMetadata(
         description?: string;
     }
 ) {
-    const existing = await getGallery(id);
-    if (!existing) throw new Error("Gallery not found");
+}
+) {
+    try {
+        console.log(`[MetadataUpdate] Starting for ${id}`, data);
+        const existing = await getGallery(id);
+        if (!existing) {
+            console.error(`[MetadataUpdate] Gallery ${id} not found`);
+            throw new Error("Gallery not found");
+        }
 
-    const updated: Gallery = {
-        ...existing,
-        title: data.title,
-        date: data.date,
-        password: data.password || undefined,
-        coverImage: data.coverImage,
-        downloadable: data.downloadable,
-        category: data.category || undefined,
-        description: data.description || "",
-        // photos are untouched
-    };
+        const updated: Gallery = {
+            ...existing,
+            title: data.title,
+            date: data.date,
+            password: data.password || undefined,
+            coverImage: data.coverImage,
+            downloadable: data.downloadable,
+            category: data.category || undefined,
+            description: data.description || "",
+        };
 
-    await saveGallery(updated);
-    await logActivity('UPDATE_GALLERY', `Updated metadata: ${data.title}`);
+        await saveGallery(updated);
+        await logActivity('UPDATE_GALLERY', `Updated metadata: ${data.title}`);
 
-    revalidatePath("/");
-    revalidatePath("/admin");
-    revalidatePath(`/galerija/${id}`);
-    // No redirect returned so client can handle it
-    return { success: true };
+        revalidatePath("/");
+        revalidatePath("/admin");
+        revalidatePath(`/galerija/${id}`);
+
+        return { success: true };
+    } catch (e) {
+        console.error("[MetadataUpdate] Error:", e);
+        return { success: false, error: e instanceof Error ? e.message : "Unknown server error" };
+    }
 }
 
 export async function removeGallery(id: string) {

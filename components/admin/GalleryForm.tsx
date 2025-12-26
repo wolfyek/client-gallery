@@ -77,7 +77,8 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 window.location.href = "/admin"; // Manual redirect
             } catch (err) {
                 console.error(err);
-                alert("Napaka pri shranjevanju metapodatkov.");
+                const msg = err instanceof Error ? err.message : "Neznana napaka";
+                alert(`Napaka pri shranjevanju: ${msg}`);
             }
         } else {
             // FULL PATH: Create or Update with Photos
