@@ -121,8 +121,17 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 </p>
             </div>
 
-            {/* Hidden Photos JSON Input */}
-            <input type="hidden" name="photos" value={JSON.stringify(photos)} />
+            {/* Hidden Photos JSON Input - Optimization to prevent massive payloads */}
+            {/* Only send photos if creating (no gallery) or if photos have changed */}
+            <input
+                type="hidden"
+                name="photos"
+                value={
+                    !isEditing || JSON.stringify(photos) !== JSON.stringify(gallery.photos)
+                        ? JSON.stringify(photos)
+                        : ""
+                }
+            />
 
             {/* Photo Manager */}
             <div className="border-t border-white/10 pt-8 space-y-4">
