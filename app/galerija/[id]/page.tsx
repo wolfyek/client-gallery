@@ -30,7 +30,7 @@ export default async function GalleryPage({ params }: { params: { id: string } }
 
                 {/* Navigation / Back Button */}
                 <nav className="fixed top-0 left-0 w-full z-50 px-6 py-6 mix-blend-difference">
-                    <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors uppercase tracking-widest text-xs">
+                    <Link href="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors uppercase tracking-widest text-xs font-dm">
                         <ArrowLeft className="w-4 h-4" /> Nazaj na galerije
                     </Link>
                 </nav>
