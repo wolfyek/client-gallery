@@ -56,8 +56,37 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         setHasPhotosChanged(true); // Mark as changed
     };
 
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        if (isEditing && !hasPhotosChanged) {
+            // OPTIMIZED PATH: Metadata only
+            try {
+                await updateGalleryMetadata(gallery.id, {
+                    title: formData.get("title") as string,
+                    date: formData.get("date") as string,
+                    password: formData.get("password") as string,
+                    coverImage: formData.get("coverImage") as string,
+                    downloadable: downloadable,
+                    category: formData.get("category") as string,
+                });
+                alert("Spremembe shranjene (Metapodatki)!");
+                window.location.href = "/admin"; // Manual redirect
+            } catch (err) {
+                console.error(err);
+                alert("Napaka pri shranjevanju metapodatkov.");
+            }
+        } else {
+            // FULL PATH: Create or Update with Photos
+            // We use the hidden input 'photos' which is already managed by our state
+            const action = isEditing ? updateGallery.bind(null, gallery.id) : createGallery;
+            await action(formData);
+        }
+    };
+
     return (
-        <form action={isEditing ? updateGallery.bind(null, gallery.id) : createGallery} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Naslov Galerije</label>
