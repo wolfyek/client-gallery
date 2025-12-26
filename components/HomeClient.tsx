@@ -18,7 +18,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
         return matchesQuery && matchesCategory;
     });
 
-    const categories = ["Poroka", "Krst", "Rojstni dan", "Koncert", "Ostalo"];
+    const categories = ["Poroka", "Krst", "Rojstni dan", "Koncert", "Šport"];
 
     return (
         <main className="min-h-screen bg-[#121212] text-white pt-8">
@@ -89,25 +89,24 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                     </div>
                 </div>
 
-                {/* Subtitle & Filter section */}
-                <div className="flex flex-col items-center justify-center mb-12 gap-8">
-                    <div className="flex flex-col items-center gap-6">
-                        <p className="text-[32px] text-white uppercase font-sans font-bold text-center">
-                            galerija fotografij
-                        </p>
-                        <div className="w-full max-w-xs h-[1px] bg-white/20" />
-                    </div>
+                {/* Subtitle */}
+                <div className="flex flex-col items-center justify-center mb-8 gap-6">
+                    <p className="text-[32px] text-white uppercase font-sans font-bold text-center">
+                        galerija fotografij
+                    </p>
+                    <div className="w-full max-w-xs h-[1px] bg-white/20" />
+                </div>
 
-                    {/* Category Filter Dropdown */}
-                    <div className="relative w-full max-w-[200px]">
+                {/* Category Filter Dropdown - Right Aligned */}
+                <div className="flex justify-end mb-8">
+                    <div className="relative w-full max-w-[180px]">
                         <div className="relative">
                             <select
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className="w-full appearance-none bg-[#121212] border border-white/20 rounded-md py-3 pl-4 pr-10 text-sm text-white uppercase tracking-widest font-dm focus:outline-none focus:border-white transition-colors cursor-pointer text-center"
+                                className="w-full appearance-none bg-[#121212] border border-white/20 rounded-full py-2 pl-4 pr-10 text-xs text-white uppercase tracking-widest font-dm focus:outline-none focus:border-white transition-colors cursor-pointer text-center"
                             >
                                 <option value="">KATEGORIJA</option>
-                                <option value="">VSE</option>
                                 {categories.map((cat) => (
                                     <option key={cat} value={cat}>
                                         {cat.toUpperCase()}

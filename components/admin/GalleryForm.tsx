@@ -70,7 +70,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                         <option value="Krst" className="bg-[#121212]">Krst</option>
                         <option value="Rojstni dan" className="bg-[#121212]">Rojstni dan</option>
                         <option value="Koncert" className="bg-[#121212]">Koncert</option>
-                        <option value="Ostalo" className="bg-[#121212]">Ostalo</option>
+                        <option value="Šport" className="bg-[#121212]">Šport</option>
                     </select>
                 </div>
                 <div className="space-y-2">
