@@ -5,49 +5,29 @@ import { kv } from '@vercel/kv';
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'galleries.json');
 
-// Helper to check if we are in a Vercel KV / Redis environment
-// We check multiple common variable names because Vercel/Upstash naming can vary.
-const getRedisUrl = () => {
-    return process.env.KV_REST_API_URL ||
-        process.env.KV_URL ||
-        process.env.REDIS_URL ||
-        process.env.UPSTASH_REDIS_REST_URL;
-};
-
-const getRedisToken = () => {
-    return process.env.KV_REST_API_TOKEN ||
-        process.env.KV_TOKEN ||
-        process.env.REDIS_TOKEN ||
-        process.env.UPSTASH_REDIS_REST_TOKEN;
-};
-
-const hasKV = () => !!getRedisUrl();
+function hasKV() {
+    return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+}
 
 export async function getGalleries(): Promise<Gallery[]> {
-    try {
-        if (hasKV()) {
-            console.log("Using KV Storage");
-            // Production / Preview with KV - Ensure we pass explicit config if using generic vars
-            const url = getRedisUrl();
-            const token = getRedisToken();
-
-            // If using standard Vercel KV, 'kv' client works auto. 
-            // If using generic, we might need to configure it, but for now let's hope standard works or we fall back.
-            // Actually, @vercel/kv requires specific vars usually. 
-            // If they are missing, we should probably construct a client, but let's stick to the default client 
-            // and assume if hasKV is true, the environment is set up.
-            // DEBUG: Use the kv client provided by the package
+    if (hasKV()) {
+        try {
             const data = await kv.get<Gallery[]>('galleries');
             return data || [];
-        } else {
-            // ...
-            // Local Development
-            await ensureDataDir();
-            const data = await fs.readFile(DATA_FILE, 'utf-8');
-            return JSON.parse(data);
+        } catch (error) {
+            console.error("KV Read Error:", error);
+            // Fallback to empty array or local file could be dangerous if data is split. 
+            // Better to return empty and let admin know.
+            return [];
         }
+    }
+
+    // Local Development / Fallback
+    await ensureDataDir();
+    try {
+        const data = await fs.readFile(DATA_FILE, 'utf-8');
+        return JSON.parse(data);
     } catch (error) {
-        console.error("Storage Read Error (returning empty):", error);
         return [];
     }
 }
@@ -56,30 +36,26 @@ export async function saveGalleries(galleries: Gallery[]) {
     if (hasKV()) {
         try {
             await kv.set('galleries', galleries);
+            // Optional: Also try to write to disk if we are in a mixed environment, 
+            // but on Vercel this will fail and we catch it below. 
+            // For now, KV is the source of truth if active.
+            return;
         } catch (e) {
             console.error("KV Write Error:", e);
-            throw new Error(`KV Write Failed: ${e instanceof Error ? e.message : String(e)}`);
+            throw new Error("Failed to save to Vercel KV Database.");
         }
-    } else {
-        // Fallback or Local
-        // Check if we are in production (read-only FS)
-        if (process.env.NODE_ENV === 'production') {
-            const kvVars = Object.keys(process.env).filter(k => k.includes('KV') || k.includes('REDIS') || k.includes('URL'));
-            // WARN instead of throw - allow local file usage if that's what the user wants/has access to
-            if (kvVars.length === 0) {
-                console.warn(`WARNING: Production environment detected but no KV/Redis variables found. Falling back to local file: ${DATA_FILE}. Note: This may not persist on serverless platforms.`);
-            }
-        }
+    }
 
-        try {
-            await ensureDataDir();
-            await fs.writeFile(DATA_FILE, JSON.stringify(galleries, null, 2), 'utf-8');
-        } catch (e) {
-            console.error("CRITICAL STORAGE ERROR: Could not write to local file.", e);
-            // On Vercel, this WILL fail if not using KV. We swallow the error so the request doesn't crash 500,
-            // but obviously data won't persist.
-            throw new Error("Storage Error: Cannot save changes (File System is Read-Only and no KV configured).");
+    // Local Development
+    try {
+        await ensureDataDir();
+        await fs.writeFile(DATA_FILE, JSON.stringify(galleries, null, 2), 'utf-8');
+    } catch (e) {
+        console.error("Local File Write Error:", e);
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error("Cannot save data: File System is Read-Only and Redis/KV is not configured.");
         }
+        throw e;
     }
 }
 
