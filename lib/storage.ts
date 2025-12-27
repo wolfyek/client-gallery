@@ -1,59 +1,67 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Gallery } from './data';
-import { kv, createClient } from '@vercel/kv';
-
-let kvClient = kv; // Default
-
+import { kv, createClient, VercelKV } from '@vercel/kv';
+import Redis from 'ioredis';
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'galleries.json');
 
-// Helper to check if we are in a Vercel KV / Redis environment
-const getRedisUrl = () => {
-    return process.env.KV_REST_API_URL ||
-        process.env.KV_URL ||
-        process.env.REDIS_URL ||
-        process.env.UPSTASH_REDIS_REST_URL;
-};
+// --- Storage Adapters ---
 
-const getRedisToken = () => {
-    return process.env.KV_REST_API_TOKEN ||
-        process.env.KV_TOKEN ||
-        process.env.REDIS_TOKEN ||
-        process.env.UPSTASH_REDIS_REST_TOKEN;
-};
-
-function hasKV() {
-    const hasURL = !!getRedisUrl();
-    const hasToken = !!getRedisToken();
-    if (!hasURL || !hasToken) {
-        console.log(`[Debug] hasKV Check: URL=${hasURL}, Token=${hasToken}`);
-        // Debug: Log available keys to see what Vercel injected (Security: Don't log values)
-        const envKeys = Object.keys(process.env).filter(k => k.includes('KV') || k.includes('REDIS') || k.includes('URL') || k.includes('TOKEN'));
-        console.log(`[Debug] Available Env Keys: ${envKeys.join(', ')}`);
-    }
-    return hasURL && hasToken;
+interface IStorage {
+    get<T>(key: string): Promise<T | null>;
+    set(key: string, value: any): Promise<void>;
 }
 
-function getKVClient() {
-    const url = getRedisUrl();
-    const token = getRedisToken();
-    if (url && token) {
-        return createClient({ url, token });
-    }
-    return kv;
+class VercelKVAdapter implements IStorage {
+    constructor(private client: VercelKV) { }
+    async get<T>(key: string) { return this.client.get<T>(key); }
+    async set(key: string, value: any) { await this.client.set(key, value); }
 }
+
+class IOredisAdapter implements IStorage {
+    constructor(private client: Redis) { }
+    async get<T>(key: string) {
+        const val = await this.client.get(key);
+        return val ? JSON.parse(val) : null;
+    }
+    async set(key: string, value: any) {
+        await this.client.set(key, JSON.stringify(value));
+    }
+}
+
+// Factory to get the best available storage client
+function getStorage(): IStorage | null {
+    // 1. Vercel KV (HTTP)
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+        const client = createClient({
+            url: process.env.KV_REST_API_URL,
+            token: process.env.KV_REST_API_TOKEN
+        });
+        return new VercelKVAdapter(client);
+    }
+    // 2. Generic Redis (TCP) - e.g. Vercel Redis Integration
+    if (process.env.REDIS_URL) {
+        // Need to ensure we don't crash if connection fails, but ioredis handles retries.
+        // On serverless, we usually create a new connection per lambda or reuse if global.
+        // For simplicity in this fix, we create new.
+        return new IOredisAdapter(new Redis(process.env.REDIS_URL));
+    }
+    return null;
+}
+
+// --- Public API ---
 
 export async function getGalleries(): Promise<Gallery[]> {
-    if (hasKV()) {
+    const storage = getStorage();
+    if (storage) {
         try {
-            const client = getKVClient();
-            const data = await client.get<Gallery[]>('galleries');
+            const data = await storage.get<Gallery[]>('galleries');
             return data || [];
         } catch (error) {
-            console.error("KV Read Error:", error);
-            // Fallback to empty array or local file could be dangerous if data is split. 
-            // Better to return empty and let admin know.
+            console.error("Storage Read Error (Redis/KV):", error);
+            // If Redis fails, we could fallback to FS, but that might lead to split-brain data.
+            // Better to return empty or error. Returning empty [] for safety.
             return [];
         }
     }
@@ -69,17 +77,14 @@ export async function getGalleries(): Promise<Gallery[]> {
 }
 
 export async function saveGalleries(galleries: Gallery[]) {
-    if (hasKV()) {
+    const storage = getStorage();
+    if (storage) {
         try {
-            const client = getKVClient();
-            await client.set('galleries', galleries);
-            // Optional: Also try to write to disk if we are in a mixed environment, 
-            // but on Vercel this will fail and we catch it below. 
-            // For now, KV is the source of truth if active.
+            await storage.set('galleries', galleries);
             return;
         } catch (e) {
-            console.error("KV Write Error:", e);
-            throw new Error("Failed to save to Vercel KV Database.");
+            console.error("Storage Write Error (Redis/KV):", e);
+            throw new Error("Failed to save to Database (Redis/KV).");
         }
     }
 
