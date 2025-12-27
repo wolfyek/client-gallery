@@ -12,22 +12,25 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
     const [query, setQuery] = useState("");
 
 
+    const [category, setCategory] = useState("VSE");
+
+    const categories = ["VSE", "Koncert", "Poroka", "Krst", "Rojstni dan", "Šport", "Portret"];
+
     const filteredGalleries = initialGalleries.filter(g => {
         const matchesQuery = g.title.toLowerCase().includes(query.toLowerCase());
-        return matchesQuery;
+        const matchesCategory = category === "VSE" || g.category === category;
+        return matchesQuery && matchesCategory;
     });
-
-
 
     return (
         <main className="min-h-screen bg-[#121212] text-white pt-8">
             <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pb-8">
 
                 {/* Header Section */}
-                <div className="relative mb-8 grid grid-cols-1 md:grid-cols-3 items-center gap-8">
+                <div className="relative mb-8 grid grid-cols-1 md:grid-cols-3 items-start gap-8">
 
-                    {/* Search - Left Aligned (Desktop) */}
-                    <div className="hidden md:flex flex-col justify-start">
+                    {/* Left Column: Search & Categories (Desktop) */}
+                    <div className="hidden md:flex flex-col items-start gap-6">
                         <div className="relative w-full max-w-xs group">
                             <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white group-focus-within:text-white transition-colors" />
                             <input
@@ -38,9 +41,23 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                                 className="w-full bg-transparent border-b border-white/80 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white transition-colors placeholder:text-white/60 uppercase tracking-widest font-dm"
                             />
                         </div>
+
+                        {/* Desktop Categories Menu */}
+                        <div className="flex flex-col gap-2">
+                            {categories.map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setCategory(cat)}
+                                    className={`text-left uppercase tracking-widest text-sm font-dm transition-colors hover:text-white
+                                        ${category === cat ? "text-white font-bold" : "text-white/40"}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Logo - Center Aligned */}
+                    {/* Center Column: Logo */}
                     <div className="flex flex-col items-center justify-center space-y-6">
                         <Link href="/" className="cursor-pointer">
                             <img
@@ -51,22 +68,8 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                         </Link>
                     </div>
 
-                    {/* Mobile Search (Visible only on mobile) */}
-                    <div className="md:hidden w-full">
-                        <div className="relative w-full group">
-                            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-white transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="ISKANJE..."
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                className="w-full bg-transparent border-b border-white/20 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 uppercase tracking-widest font-dm"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Social Links - Right Aligned (Desktop) */}
-                    <div className="hidden md:flex justify-end gap-6">
+                    {/* Right Column: Socials (Desktop) */}
+                    <div className="hidden md:flex justify-end gap-6 pt-2">
                         <a
                             href="https://instagram.com/photosbyfarkas"
                             target="_blank"
@@ -85,6 +88,35 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                         >
                             <Globe className="w-5 h-5" />
                         </a>
+                    </div>
+
+                    {/* Mobile Header Layout */}
+                    <div className="md:hidden w-full flex flex-col gap-6">
+                        {/* Search */}
+                        <div className="relative w-full group">
+                            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-white transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="ISKANJE..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full bg-transparent border-b border-white/20 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 uppercase tracking-widest font-dm"
+                            />
+                        </div>
+
+                        {/* Mobile Category Dropdown (Center) */}
+                        <div className="flex justify-center">
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="bg-[#121212] text-white border border-white/20 px-4 py-2 rounded-none uppercase tracking-widest text-sm font-dm focus:outline-none focus:border-white w-full text-center appearance-none"
+                                style={{ textAlignLast: 'center' }}
+                            >
+                                {categories.map((cat) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -136,7 +168,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
 
                     {filteredGalleries.length === 0 && (
                         <div className="col-span-full text-center py-20 text-white/30 uppercase tracking-widest">
-                            Ni rezultatov za "{query}"
+                            Ni rezultatov za "{query}" {category !== "VSE" && `v kategoriji ${category}`}
                         </div>
                     )}
                 </div>

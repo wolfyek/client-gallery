@@ -91,6 +91,7 @@ export async function createGallery(formData: FormData) {
     const date = formData.get("date") as string;
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
+    const category = formData.get("category") as string;
     const downloadable = formData.get("downloadable") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const photosJson = formData.get("photos") as string;
@@ -109,6 +110,7 @@ export async function createGallery(formData: FormData) {
         date,
         password,
         coverImage,
+        category,
         downloadable,
         photos
     };
@@ -138,6 +140,7 @@ export async function updateGallery(id: string, formData: FormData) {
     const date = formData.get("date") as string;
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
+    const category = formData.get("category") as string;
     const downloadable = formData.get("downloadable") === "on";
     const photosJson = formData.get("photos") as string;
 
@@ -161,6 +164,7 @@ export async function updateGallery(id: string, formData: FormData) {
         date,
         password,
         coverImage,
+        category,
         downloadable,
         photos
     };
@@ -188,6 +192,7 @@ export async function updateGalleryMetadata(
         date: string;
         password?: string;
         coverImage: string;
+        category?: string;
         downloadable: boolean;
         description?: string;
     }
@@ -206,6 +211,7 @@ export async function updateGalleryMetadata(
             date: data.date,
             password: data.password || undefined,
             coverImage: data.coverImage,
+            category: data.category,
             downloadable: data.downloadable,
             description: data.description || "",
         };

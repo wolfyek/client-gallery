@@ -72,6 +72,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     date: formData.get("date") as string,
                     password: formData.get("password") as string,
                     coverImage: formData.get("coverImage") as string,
+                    category: formData.get("category") as string,
                     downloadable: downloadable,
                 });
                 if (result.success) {
@@ -138,12 +139,29 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                             required
                             className="bg-white/5 border-white/10 font-dm"
                         />
-                        {coverImage && (
-                            <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden border border-white/20">
-                                <Image src={coverImage} fill alt="Cover" className="object-cover" unoptimized />
-                            </div>
-                        )}
                     </div>
+                    {coverImage && (
+                        <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden border border-white/20">
+                            <Image src={coverImage} fill alt="Cover" className="object-cover" unoptimized />
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Kategorija</label>
+                    <select
+                        name="category"
+                        defaultValue={gallery?.category || ""}
+                        className="w-full h-10 px-3 rounded-md bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/20 font-dm appearance-none"
+                    >
+                        <option value="" className="bg-[#121212] text-white/50">-- Izberi Kategorijo --</option>
+                        <option value="Koncert" className="bg-[#121212]">Koncert</option>
+                        <option value="Poroka" className="bg-[#121212]">Poroka</option>
+                        <option value="Krst" className="bg-[#121212]">Krst</option>
+                        <option value="Rojstni dan" className="bg-[#121212]">Rojstni dan</option>
+                        <option value="Šport" className="bg-[#121212]">Šport</option>
+                        <option value="Portret" className="bg-[#121212]">Portret</option>
+                    </select>
                 </div>
                 <div className="space-y-2 flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-4 mt-6 h-[50px]">
                     <Input
@@ -264,15 +282,17 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
             </div>
 
             {/* Upload Progress Popup */}
-            {isImporting && (
-                <div className="fixed bottom-8 right-8 z-50 bg-[#121212] border border-white/20 p-6 rounded-lg shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <div className="flex flex-col">
-                        <span className="text-sm font-bold uppercase tracking-wider">Uvažanje...</span>
-                        <span className="text-xs text-white/50">Povezujem se z Nextcloud</span>
+            {
+                isImporting && (
+                    <div className="fixed bottom-8 right-8 z-50 bg-[#121212] border border-white/20 p-6 rounded-lg shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold uppercase tracking-wider">Uvažanje...</span>
+                            <span className="text-xs text-white/50">Povezujem se z Nextcloud</span>
+                        </div>
                     </div>
-                </div>
-            )}
-        </form>
+                )
+            }
+        </form >
     );
 }
