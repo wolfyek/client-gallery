@@ -42,19 +42,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                             />
                         </div>
 
-                        {/* Desktop Categories Menu */}
-                        <div className="flex flex-col gap-2">
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setCategory(cat)}
-                                    className={`text-left uppercase tracking-widest text-sm font-dm transition-colors hover:text-white
-                                        ${category === cat ? "text-white font-bold" : "text-white/40"}`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                        </div>
+
                     </div>
 
                     {/* Center Column: Logo */}
@@ -104,28 +92,36 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                             />
                         </div>
 
-                        {/* Mobile Category Dropdown (Center) */}
-                        <div className="flex justify-center">
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="bg-[#121212] text-white border border-white/20 px-4 py-2 rounded-none uppercase tracking-widest text-sm font-dm focus:outline-none focus:border-white w-full text-center appearance-none"
-                                style={{ textAlignLast: 'center' }}
-                            >
-                                {categories.map((cat) => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
-                        </div>
+
                     </div>
                 </div>
 
                 {/* Subtitle */}
-                <div className="flex flex-col items-center justify-center mb-8 gap-6">
+                <div className="flex flex-col items-center justify-center mb-10 gap-6">
                     <p className="text-[32px] text-white uppercase font-sans font-bold text-center">
                         galerija fotografij
                     </p>
                     <div className="w-full max-w-xs h-[1px] bg-white/20" />
+
+                    {/* Category Filter - Centered below title */}
+                    <div className="flex items-center gap-4">
+                        <span className="text-xs uppercase tracking-widest text-white/50 font-dm">Kategorija:</span>
+                        <div className="relative">
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="bg-transparent text-white border-b border-white/40 py-1 pr-8 pl-2 uppercase tracking-widest text-sm font-dm focus:outline-none focus:border-white appearance-none cursor-pointer"
+                            >
+                                {categories.map((cat) => (
+                                    <option key={cat} value={cat} className="bg-[#121212]">{cat}</option>
+                                ))}
+                            </select>
+                            {/* Custom Arrow */}
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
 
