@@ -65,7 +65,6 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         // DEBUG: Alert the data being sent
         const debugData = {
             title: formData.get("title"),
-            category: formData.get("category"),
             downloadable: downloadable,
         };
         alert(`DEBUG: Sending: ${JSON.stringify(debugData)}`);
@@ -79,7 +78,6 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     password: formData.get("password") as string,
                     coverImage: formData.get("coverImage") as string,
                     downloadable: downloadable,
-                    category: formData.get("category") as string,
                 });
                 if (result.success) {
                     alert(`Spremembe shranjene!\nServer Verify: ${result['debugMessage'] || 'OK'}`);
@@ -95,8 +93,13 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         } else {
             // FULL PATH: Create or Update with Photos
             // We use the hidden input 'photos' which is already managed by our state
-            const action = isEditing ? updateGallery.bind(null, gallery.id) : createGallery;
-            await action(formData);
+            try {
+                const action = isEditing ? updateGallery.bind(null, gallery.id) : createGallery;
+                await action(formData);
+            } catch (error) {
+                console.error("Submission error:", error);
+                alert(`Napaka pri shranjevanju: ${error instanceof Error ? error.message : "Neznana napaka"}`);
+            }
         }
     };
 
@@ -107,21 +110,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Naslov Galerije</label>
                     <Input name="title" defaultValue={gallery?.title} placeholder="npr. Ana & Mark" required className="bg-white/5 border-white/10 font-dm" />
                 </div>
-                <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Kategorija</label>
-                    <select
-                        name="category"
-                        defaultValue={gallery?.category || ""}
-                        className="flex h-11 w-full rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/50 font-dm appearance-none"
-                    >
-                        <option value="" className="bg-[#121212] text-white/50">Brez Kategorije</option>
-                        <option value="Poroka" className="bg-[#121212]">Poroka</option>
-                        <option value="Krst" className="bg-[#121212]">Krst</option>
-                        <option value="Rojstni dan" className="bg-[#121212]">Rojstni dan</option>
-                        <option value="Koncert" className="bg-[#121212]">Koncert</option>
-                        <option value="Šport" className="bg-[#121212]">Šport</option>
-                    </select>
-                </div>
+
                 <div className="space-y-2">
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Datum (YYYY-MM-DD)</label>
                     <Input name="date" type="date" defaultValue={gallery?.date} required className="bg-white/5 border-white/10" />

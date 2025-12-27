@@ -47,7 +47,7 @@ export async function getGalleries(): Promise<Gallery[]> {
             return JSON.parse(data);
         }
     } catch (error) {
-        console.warn("Storage Read Error (returning empty):", error);
+        console.error("Storage Read Error (returning empty):", error);
         return [];
     }
 }
@@ -64,8 +64,11 @@ export async function saveGalleries(galleries: Gallery[]) {
         // Fallback or Local
         // Check if we are in production (read-only FS)
         if (process.env.NODE_ENV === 'production') {
-            const vars = Object.keys(process.env).filter(k => k.includes('KV') || k.includes('REDIS') || k.includes('URL'));
-            throw new Error(`CRITICAL: Cannot save to disk in Production (EROFS). KV/Redis NOT detected. Available Vars: ${vars.join(', ')}`);
+            const kvVars = Object.keys(process.env).filter(k => k.includes('KV') || k.includes('REDIS') || k.includes('URL'));
+            // WARN instead of throw - allow local file usage if that's what the user wants/has access to
+            if (kvVars.length === 0) {
+                console.warn(`WARNING: Production environment detected but no KV/Redis variables found. Falling back to local file: ${DATA_FILE}. Note: This may not persist on serverless platforms.`);
+            }
         }
 
         await ensureDataDir();

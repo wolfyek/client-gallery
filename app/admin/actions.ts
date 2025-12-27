@@ -92,7 +92,6 @@ export async function createGallery(formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const downloadable = formData.get("downloadable") === "on";
-    const category = formData.get("category") as string;
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const photosJson = formData.get("photos") as string;
 
@@ -111,7 +110,6 @@ export async function createGallery(formData: FormData) {
         password,
         coverImage,
         downloadable,
-        category,
         photos
     };
 
@@ -133,7 +131,6 @@ export async function updateGallery(id: string, formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const downloadable = formData.get("downloadable") === "on";
-    const category = formData.get("category") as string;
     const photosJson = formData.get("photos") as string;
 
     let photos = existing.photos;
@@ -157,7 +154,6 @@ export async function updateGallery(id: string, formData: FormData) {
         password,
         coverImage,
         downloadable,
-        category,
         photos
     };
 
@@ -179,7 +175,6 @@ export async function updateGalleryMetadata(
         password?: string;
         coverImage: string;
         downloadable: boolean;
-        category?: string;
         description?: string;
     }
 ) {
@@ -198,7 +193,6 @@ export async function updateGalleryMetadata(
             password: data.password || undefined,
             coverImage: data.coverImage,
             downloadable: data.downloadable,
-            category: data.category || undefined,
             description: data.description || "",
         };
 
@@ -207,20 +201,14 @@ export async function updateGalleryMetadata(
 
         // FORCE READ-BACK VERIFICATION
         const verify = await getGallery(id);
-        const savedCategory = verify?.category;
 
-        console.log(`[MetadataUpdate] Verification - Expected: ${data.category}, Got: ${savedCategory}`);
-
-        // Logic check: If we sent a category, but it's not there, that's a failure.
-        if (data.category && savedCategory !== data.category) {
-            throw new Error(`CRITICAL: Data Verification Failed. Database has: '${savedCategory}'`);
-        }
+        console.log(`[MetadataUpdate] Verification - Title: ${verify?.title}`);
 
         revalidatePath("/");
         revalidatePath("/admin");
         revalidatePath(`/galerija/${id}`);
 
-        return { success: true, debugMessage: `Saved! Cat: ${savedCategory}` };
+        return { success: true, debugMessage: `Saved!` };
     } catch (e) {
         console.error("[MetadataUpdate] Error:", e);
         return { success: false, error: e instanceof Error ? e.message : "Unknown server error" };

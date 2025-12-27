@@ -14,6 +14,5 @@ export type Gallery = {
     coverImage: string;
     password?: string; // If undefined, it's public
     downloadable?: boolean; // Defaults to true if undefined
-    category?: string; // Koncert, Poroka, Krst, Rojstni dan
     photos: Photo[];
 };
