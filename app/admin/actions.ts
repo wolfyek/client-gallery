@@ -52,19 +52,37 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         while ((match = hrefRegex.exec(xmlText)) !== null) {
             const href = match[2];
             const decodedHref = decodeURIComponent(href);
-            const filename = decodedHref.split('/').pop();
+
+            // Handle relative path extraction
+            // WebDAV path usually looks like /public.php/webdav/folder/image.jpg
+            let relativePath = decodedHref;
+            if (relativePath.includes('/public.php/webdav')) {
+                relativePath = relativePath.split('/public.php/webdav')[1];
+            }
+
+            if (!relativePath) continue;
+
+            // Extract directory and filename
+            // relativePath should be something like "/Folder/Image.jpg" or "/Image.jpg"
+            const pathParts = relativePath.split('/');
+            const filename = pathParts.pop(); // Remove and get last part (filename)
+            const dirStr = pathParts.join('/') || "/"; // Rest is directory
 
             if (!filename) continue;
 
             const isImage = filename.match(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             if (isImage) {
-                // Construct Public Preview URL
-                // Pattern: https://[host]/index.php/apps/files_sharing/publicpreview/[token]?file=/[filename]&x=1920&y=1080&a=true
-                const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
-                const finalSrc = `${previewBase}?file=/${encodeURIComponent(filename)}&x=1920&y=1080&a=true`;
+                // Construct Direct Download URL
+                // Format: https://[host]/index.php/s/[token]/download?path=/[dir]&files=[filename]
 
-                console.log(`Generated Preview URL: ${finalSrc}`);
+                // Ensure dir starts with /
+                const finalDir = dirStr.startsWith('/') ? dirStr : `/${dirStr}`;
+
+                const downloadBase = `${baseUrl}/index.php/s/${token}/download`;
+                const finalSrc = `${downloadBase}?path=${encodeURIComponent(finalDir)}&files=${encodeURIComponent(filename)}`;
+
+                console.log(`Generated Download URL: ${finalSrc}`);
 
                 photos.push({
                     id: Math.random().toString(36).substr(2, 9),
