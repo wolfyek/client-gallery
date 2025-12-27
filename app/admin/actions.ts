@@ -205,11 +205,22 @@ export async function updateGalleryMetadata(
         await saveGallery(updated);
         await logActivity('UPDATE_GALLERY', `Updated metadata: ${data.title}`);
 
+        // FORCE READ-BACK VERIFICATION
+        const verify = await getGallery(id);
+        const savedCategory = verify?.category;
+
+        console.log(`[MetadataUpdate] Verification - Expected: ${data.category}, Got: ${savedCategory}`);
+
+        // Logic check: If we sent a category, but it's not there, that's a failure.
+        if (data.category && savedCategory !== data.category) {
+            throw new Error(`CRITICAL: Data Verification Failed. Database has: '${savedCategory}'`);
+        }
+
         revalidatePath("/");
         revalidatePath("/admin");
         revalidatePath(`/galerija/${id}`);
 
-        return { success: true };
+        return { success: true, debugMessage: `Saved! Cat: ${savedCategory}` };
     } catch (e) {
         console.error("[MetadataUpdate] Error:", e);
         return { success: false, error: e instanceof Error ? e.message : "Unknown server error" };
