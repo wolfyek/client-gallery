@@ -219,9 +219,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 priority={i < 6}
-                                quality={90}
+                                quality={75}
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                unoptimized
                             />
                             {/* Overlay */}
                             <div
@@ -284,9 +283,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         alt={selectedPhoto.alt}
                                         fill
                                         className="object-contain"
-                                        quality={100}
+                                        quality={90}
                                         priority
-                                        unoptimized
                                     />
                                 </motion.div>
 
@@ -364,10 +362,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             {selectedPhoto && (
                 <div className="hidden">
                     {nextPhoto && (
-                        <Image src={nextPhoto.src} alt="preload-next" width={1} height={1} priority unoptimized />
+                        <Image src={nextPhoto.src} alt="preload-next" width={1} height={1} priority quality={50} />
                     )}
                     {prevPhoto && (
-                        <Image src={prevPhoto.src} alt="preload-prev" width={1} height={1} priority unoptimized />
+                        <Image src={prevPhoto.src} alt="preload-prev" width={1} height={1} priority quality={50} />
                     )}
                 </div>
             )}
