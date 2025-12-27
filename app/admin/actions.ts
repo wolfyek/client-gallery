@@ -72,26 +72,25 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
             if (isImage) {
                 // Reconstruct directory path
-                // If parts was ['', 'Folder', 'File.jpg'], pop -> 'File.jpg'. parts -> ['', 'Folder']. join -> '/Folder'
-                // If parts was ['', 'File.jpg'], pop -> 'File.jpg'. parts -> ['']. join -> '' -> needs to be '/'
                 let dirStr = pathParts.join('/');
-                // Ensure dir is at least "/"
-                if (!dirStr || dirStr === "") {
-                    dirStr = "/";
-                }
+                if (!dirStr || dirStr === "") dirStr = "/";
 
-                // If dir doesn't start with slash, add it (though join('/') on split result usually handles it if it started with slash)
-                // If finalPath was "/Image.jpg", split is ["", "Image.jpg"], pop="Image.jpg", join is "" -> becomes "/"
-                // If finalPath was "/Folder/Image.jpg", split is ["", "Folder", "Image.jpg"], pop="Image.jpg", join is "/Folder"
+                // Construct PROXY URL
+                // We point to our own API which will tunnel the request via WebDAV
+                // Params: server, token, path (full path relative to share root)
 
-                const downloadBase = `${baseUrl}/index.php/s/${token}/download`;
-                const finalSrc = `${downloadBase}?path=${encodeURIComponent(dirStr)}&files=${encodeURIComponent(filename || "")}`;
+                // full relative path
+                const fullPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
-                console.log(`Generated Download URL: ${finalSrc}`);
+                // We use the current Request's origin if possible, but here we generate a relative path string
+                // for the DB. The frontend will resolve it against the current domain.
+                const proxyUrl = `/api/proxy?server=${encodeURIComponent(baseUrl)}&token=${encodeURIComponent(token)}&path=${encodeURIComponent(fullPath)}`;
+
+                console.log(`Generated Proxy URL: ${proxyUrl}`);
 
                 photos.push({
                     id: Math.random().toString(36).substr(2, 9),
-                    src: finalSrc,
+                    src: proxyUrl,
                     width: 1920,
                     height: 1080,
                     alt: filename || "Nextcloud Image"
