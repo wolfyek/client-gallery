@@ -73,7 +73,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         if (isEditing && !hasPhotosChanged) {
             // OPTIMIZED PATH: Metadata only
             try {
-                await updateGalleryMetadata(gallery.id, {
+                const result = await updateGalleryMetadata(gallery.id, {
                     title: formData.get("title") as string,
                     date: formData.get("date") as string,
                     password: formData.get("password") as string,
