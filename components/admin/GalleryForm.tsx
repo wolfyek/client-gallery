@@ -264,6 +264,9 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                                         <Check className="w-3 h-3" /> COVER
                                     </div>
                                 )}
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-[8px] text-white/70 truncate px-1 py-1 z-10 font-mono" title={photo.src}>
+                                    {photo.src}
+                                </div>
                             </div>
                         );
                     })}
