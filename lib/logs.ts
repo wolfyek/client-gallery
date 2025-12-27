@@ -2,6 +2,8 @@ import fs from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 
+import { getDB } from "./storage";
+
 const LOGS_FILE = path.join(process.cwd(), "data", "logs.json");
 
 export type ActivityLog = {
@@ -43,6 +45,18 @@ async function ensureLogsFile() {
 }
 
 export async function getLogs(): Promise<LogsData> {
+    const db = getDB();
+    if (db) {
+        try {
+            const data = await db.get<LogsData>('logs');
+            return data || { activity: [], downloads: [] };
+        } catch (e) {
+            console.error("Failed to read logs from DB", e);
+            return { activity: [], downloads: [] };
+        }
+    }
+
+    // FS Fallback
     try {
         await ensureLogsFile();
         const data = await fs.readFile(LOGS_FILE, "utf-8");
@@ -55,6 +69,28 @@ export async function getLogs(): Promise<LogsData> {
 
 export async function logActivity(type: ActivityLog['type'], description: string, user: string = 'admin') {
     console.log(`[ACTIVITY] ${type}: ${description} (User: ${user})`);
+
+    // DB Strategy
+    const db = getDB();
+    if (db) {
+        try {
+            const logs = await getLogs();
+            const newLog: ActivityLog = {
+                id: randomUUID(),
+                type,
+                description,
+                user,
+                timestamp: new Date().toISOString(),
+            };
+            logs.activity.unshift(newLog); // Add to beginning
+            await db.set('logs', logs);
+        } catch (e) {
+            console.error("Failed to persist activity log to DB.", e);
+        }
+        return;
+    }
+
+    // FS Strategy
     try {
         const logs = await getLogs();
         const newLog: ActivityLog = {
@@ -73,6 +109,30 @@ export async function logActivity(type: ActivityLog['type'], description: string
 
 export async function logDownload(email: string, galleryTitle: string, photoId: string, photoSrc: string, photoName: string) {
     console.log(`[DOWNLOAD] ${email} downloaded ${photoName} from ${galleryTitle}`);
+
+    // DB Strategy
+    const db = getDB();
+    if (db) {
+        try {
+            const logs = await getLogs();
+            const newLog: DownloadLog = {
+                id: randomUUID(),
+                email,
+                galleryTitle,
+                photoId,
+                photoSrc,
+                photoName,
+                timestamp: new Date().toISOString(),
+            };
+            logs.downloads.unshift(newLog); // Add to beginning
+            await db.set('logs', logs);
+        } catch (e) {
+            console.error("Failed to persist download log to DB.", e);
+        }
+        return;
+    }
+
+    // FS Strategy
     try {
         const logs = await getLogs();
         const newLog: DownloadLog = {

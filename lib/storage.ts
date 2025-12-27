@@ -8,7 +8,7 @@ const DATA_FILE = path.join(process.cwd(), 'data', 'galleries.json');
 
 // --- Storage Adapters ---
 
-interface IStorage {
+export interface IStorage {
     get<T>(key: string): Promise<T | null>;
     set(key: string, value: any): Promise<void>;
 }
@@ -31,7 +31,7 @@ class IOredisAdapter implements IStorage {
 }
 
 // Factory to get the best available storage client
-function getStorage(): IStorage | null {
+export function getDB(): IStorage | null {
     // 1. Vercel KV (HTTP)
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
         const client = createClient({
@@ -53,7 +53,7 @@ function getStorage(): IStorage | null {
 // --- Public API ---
 
 export async function getGalleries(): Promise<Gallery[]> {
-    const storage = getStorage();
+    const storage = getDB();
     if (storage) {
         try {
             const data = await storage.get<Gallery[]>('galleries');
@@ -77,7 +77,7 @@ export async function getGalleries(): Promise<Gallery[]> {
 }
 
 export async function saveGalleries(galleries: Gallery[]) {
-    const storage = getStorage();
+    const storage = getDB();
     if (storage) {
         try {
             await storage.set('galleries', galleries);
