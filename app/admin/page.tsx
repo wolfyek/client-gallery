@@ -5,6 +5,8 @@ import { Plus, Edit, Trash2, ArrowLeft, Activity } from "lucide-react";
 import { removeGallery } from "./actions";
 import LogoutButton from "@/components/admin/LogoutButton";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
     const galleries = await getGalleries();
 

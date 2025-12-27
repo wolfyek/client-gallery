@@ -81,8 +81,12 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     downloadable: downloadable,
                     category: formData.get("category") as string,
                 });
-                alert("Spremembe shranjene (Metapodatki)!");
-                window.location.href = "/admin"; // Manual redirect
+                if (result.success) {
+                    alert(`Spremembe shranjene!\nServer Verify: ${result['debugMessage'] || 'OK'}`);
+                    window.location.href = "/admin";
+                } else {
+                    throw new Error(result.error);
+                }
             } catch (err) {
                 console.error(err);
                 const msg = err instanceof Error ? err.message : "Neznana napaka";
