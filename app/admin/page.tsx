@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, ArrowLeft, Activity } from "lucide-react";
 import { removeGallery } from "./actions";
 import LogoutButton from "@/components/admin/LogoutButton";
+import DeleteGalleryButton from "@/components/admin/DeleteGalleryButton";
 
 export const dynamic = 'force-dynamic';
 
