@@ -80,23 +80,16 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
                 const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
 
-                // CRITICAL: We use encodeURIComponent for the WHOLE path but we might need to be careful.
-                // Actually, standard browsers encode slashes in query params as %2F.
-                // But Nextcloud might want them raw? 
-                // Let's try to mimic the "yesterday" logic which was just `file=/${filename}` but with the full path.
-                // If I use `file=${finalPath}`, the browser will encode it.
-                // Let's try `encodeURIComponent(finalPath)` which produces %2F.
-                // If that failed, let's try `finalPath` directly (so spaces are encoded but slashes might be kept if manual?)
-                // Wait, if I put it in a string, it's just a string.
+                // 1. Smart Encoding for Nextcloud
+                // We must encode each segment (spaces, etc.) but VALIDATE that slashes remain slashes.
+                // Nextcloud likely expects: ?file=/SubFolder/My%20Image.jpg
+                // format: ?file=[encoded_path]
 
-                // LET'S TRY: encodeURIComponent but replace %2F with / ?
-                // No, that's partial encoding.
+                // Split by /, encode each part, join by /
+                // This converts "/Folder Name/Image.jpg" -> "/Folder%20Name/Image.jpg"
+                const encodedPath = finalPath.split('/').map(segment => encodeURIComponent(segment)).join('/');
 
-                // The most standard way is `encodeURIComponent`. 
-                // However, I will try to use `previewBase` again.
-                // And I will try to make sure `finalPath` is correct.
-
-                const finalSrc = `${previewBase}?file=${encodeURIComponent(finalPath)}&x=1920&y=1080&a=true`;
+                const finalSrc = `${previewBase}?file=${encodedPath}&x=1920&y=1080&a=true`;
 
                 console.log(`Generated Preview URL so far: ${finalSrc}`);
 
