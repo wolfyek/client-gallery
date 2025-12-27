@@ -59,11 +59,7 @@ export default async function AdminDashboard() {
                                             <Edit className="w-5 h-5" />
                                         </Button>
                                     </Link>
-                                    <form action={removeGallery.bind(null, gallery.id)}>
-                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-400 hover:bg-red-900/20">
-                                            <Trash2 className="w-5 h-5" />
-                                        </Button>
-                                    </form>
+                                    <DeleteGalleryButton id={gallery.id} title={gallery.title} />
                                 </div>
                             </div>
                         </div>
