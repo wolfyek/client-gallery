@@ -78,22 +78,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                         </a>
                     </div>
 
-                    {/* Mobile Header Layout */}
-                    <div className="md:hidden w-full flex flex-col gap-6">
-                        {/* Search */}
-                        <div className="relative w-full group">
-                            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-white transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="ISKANJE..."
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                className="w-full bg-transparent border-b border-white/20 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 uppercase tracking-widest font-dm"
-                            />
-                        </div>
 
-
-                    </div>
                 </div>
 
                 {/* Subtitle */}
