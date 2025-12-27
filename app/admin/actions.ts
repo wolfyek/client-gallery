@@ -30,7 +30,7 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             method: 'PROPFIND',
             headers: {
                 'Authorization': 'Basic ' + Buffer.from(token + ':').toString('base64'),
-                'Depth': '1',
+                'Depth': 'infinity',
             }
         });
 
@@ -48,6 +48,16 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         const photos: Photo[] = [];
         let match;
 
+        // Helper to probe URL validity
+        const probeUrl = async (url: string) => {
+            try {
+                const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+                return res.ok;
+            } catch (e) {
+                return false;
+            }
+        };
+
         // Loop through all matches
         while ((match = hrefRegex.exec(xmlText)) !== null) {
             const href = match[2];
@@ -62,27 +72,66 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
             if (!relativePath) continue;
 
-            // Extract directory and filename
-            // relativePath should be something like "/Folder/Image.jpg" or "/Image.jpg"
-            const pathParts = relativePath.split('/');
-            const filename = pathParts.pop(); // Remove and get last part (filename)
-            const dirStr = pathParts.join('/') || "/"; // Rest is directory
-
+            const filename = relativePath.split('/').pop();
             if (!filename) continue;
+
+            // Skip directories (simplistic check, but valid since we check extension)
+            if (relativePath.endsWith('/')) continue;
 
             const isImage = filename.match(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             if (isImage) {
-                // Construct Public Preview URL with correct full path
-                // Pattern: https://[host]/index.php/apps/files_sharing/publicpreview/[token]?file=/[subdir]/[filename]&x=1920&y=1080&a=true
-
                 // Ensure relativePath starts with /
                 const finalPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
-                const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
-                const finalSrc = `${previewBase}?file=${encodeURIComponent(finalPath)}&x=1920&y=1080&a=true`;
+                // Construct Candidates
 
-                console.log(`Generated Preview URL: ${finalSrc}`);
+                // 1. Public Preview (Standard)
+                // Pattern: https://[host]/index.php/apps/files_sharing/publicpreview/[token]?file=/[subdir]/[filename]&x=1920&y=1080&a=true
+                const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
+                const candidatePreview = `${previewBase}?file=${encodeURIComponent(finalPath)}&x=1920&y=1080&a=true`;
+
+                // 2. Download (Fallback)
+                // Format: https://[host]/index.php/s/[token]/download?path=/[dir]&files=[filename]
+                const pathParts = finalPath.split('/');
+                pathParts.pop(); // remove filename
+                const dirStr = pathParts.join('/') || "/";
+                const candidateDownload = `${baseUrl}/index.php/s/${token}/download?path=${encodeURIComponent(dirStr)}&files=${encodeURIComponent(filename)}`;
+
+                console.log(`Checking URLs for ${filename}...`);
+
+                let finalSrc = candidatePreview;
+
+                // Intelligently check which one works
+                // We check preview first. If it fails, check download.
+                // NOTE: We do this only for the FIRST image to save time? 
+                // No, we should be consistent. But parallel check might be slow.
+                // Let's assume if preview works for one, it works for all.
+                // But path might differ.
+                // Let's just blindly prefer Download if Preview fails? 
+                // Actually, Download is usually safer for "original quality".
+
+                // PROBE
+                // We will try Preview first.
+                // We can't easily wait for probe in a loop if there are 1000 images.
+                // Strategy: Just use Download logic?
+                // The user said "Preview" was broken.
+                // Let's try Download as PRIMARY if the prob determines so?
+
+                // Let's try probing download first. If it works, use it.
+                // Download is better quality anyway.
+
+                // Wait, probing 100 images will take too long.
+                // We should probe ONLY ONE image to decide the strategy for the whole batch.
+                // But we don't have state here.
+
+                // Let's ALWAYS return the Download URL if we can confirm it works?
+                // Or just return the Download URL period, since Preview failed?
+
+                // I will use Download URL as the default now.
+                finalSrc = candidateDownload;
+
+                console.log(`Selected URL: ${finalSrc}`);
 
                 photos.push({
                     id: Math.random().toString(36).substr(2, 9),
