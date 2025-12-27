@@ -90,36 +90,38 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
         // 4. Pair "Full" and "Web" images
         // Logic: "Full" (or anything not "Web") is the master. "Web" is the enhancement.
-        // We group by filename.
+        // We group by "basename" (filename without extension) to handle .png vs .jpg differences.
 
         const fullPhotos: { [key: string]: typeof foundFiles[0] } = {};
         const webPhotos: { [key: string]: typeof foundFiles[0] } = {};
 
         foundFiles.forEach(file => {
+            // Strip extension (e.g. "image.jpg" -> "image", "my.photo.png" -> "my.photo")
+            const basename = file.filename.replace(/\.[^/.]+$/, "").toLowerCase();
+
             // Check if folder is explicitly "Web" (case insensitive)
             if (file.folder && file.folder.toLowerCase() === 'web') {
-                webPhotos[file.filename] = file;
+                webPhotos[basename] = file;
             } else {
                 // Everything else is treated as potential "Full" / Main photo
-                // If there are multiple "Full" folders, the last one wins (simple logic)
-                fullPhotos[file.filename] = file;
+                fullPhotos[basename] = file;
             }
         });
 
         const photos: Photo[] = [];
 
         // Create Photo objects from Full photos, attaching Web preview if available
-        for (const filename in fullPhotos) {
-            const full = fullPhotos[filename];
-            const web = webPhotos[filename];
+        for (const basename in fullPhotos) {
+            const full = fullPhotos[basename];
+            const web = webPhotos[basename];
 
             photos.push({
                 id: Math.random().toString(36).substr(2, 9),
-                src: full.proxyUrl, // Download/HighRes URL
-                previewSrc: web ? web.proxyUrl : undefined, // Display URL (if Web exists)
+                src: full.proxyUrl, // Download/HighRes URL (Main)
+                previewSrc: web ? web.proxyUrl : undefined, // Display URL (Web version if exists)
                 width: 1920, // Default placeholders, actual size determined by loading
                 height: 1080,
-                alt: filename
+                alt: full.filename // Use original filename as alt
             });
         }
 
