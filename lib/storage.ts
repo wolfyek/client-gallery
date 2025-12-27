@@ -90,7 +90,8 @@ export async function saveGalleries(galleries: Gallery[]) {
     } catch (e) {
         console.error("Local File Write Error:", e);
         if (process.env.NODE_ENV === 'production') {
-            throw new Error("Cannot save data: File System is Read-Only and Redis/KV is not configured.");
+            const envKeys = Object.keys(process.env).filter(k => k.includes('KV') || k.includes('REDIS') || k.includes('URL') || k.includes('TOKEN'));
+            throw new Error(`Cannot save data: File System is Read-Only and Redis/KV is not configured. Debug: [${envKeys.join(', ') || 'NONE'}]`);
         }
         throw e;
     }
