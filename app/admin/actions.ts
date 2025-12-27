@@ -74,31 +74,39 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
                 // Construct Public Preview URL
                 // We use standard encodeURI to preserve slashes for the path
                 // Pattern: https://[host]/index.php/apps/files_sharing/publicpreview/[token]?file=/[subdir]/[filename]&x=1920&y=1080&a=true
-
                 // Ensure relativePath starts with /
                 const finalPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
                 const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
 
-                // 1. Smart Encoding for Nextcloud
-                // We must encode each segment (spaces, etc.) but VALIDATE that slashes remain slashes.
-                // Nextcloud likely expects: ?file=/SubFolder/My%20Image.jpg
-                // format: ?file=[encoded_path]
+                // 1. Switch to DOWNLOAD endpoint
+                // Public Preview is flaky/broken. Download endpoint is robust for public shares.
+                // Format: https://[host]/index.php/s/[token]/download?path=[encoded_dir]&files=[encoded_filename]
 
-                // Split by /, encode each part, join by /
-                // This converts "/Folder Name/Image.jpg" -> "/Folder%20Name/Image.jpg"
-                const encodedPath = finalPath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+                const pathParts = finalPath.split('/');
+                const filename = pathParts.pop(); // Remove and get last part (filename)
+                let dirStr = pathParts.join('/');
 
-                const finalSrc = `${previewBase}?file=${encodedPath}&x=1920&y=1080&a=true`;
+                // Ensure dir is at least "/"
+                if (!dirStr || dirStr === "") {
+                    dirStr = "/";
+                }
 
-                console.log(`Generated Preview URL so far: ${finalSrc}`);
+                // If dir doesn't start with slash, add it (though join('/') on split result usually handles it if it started with slash)
+                // If finalPath was "/Image.jpg", split is ["", "Image.jpg"], pop="Image.jpg", join is "" -> becomes "/"
+                // If finalPath was "/Folder/Image.jpg", split is ["", "Folder", "Image.jpg"], pop="Image.jpg", join is "/Folder"
+
+                const downloadBase = `${baseUrl}/index.php/s/${token}/download`;
+                const finalSrc = `${downloadBase}?path=${encodeURIComponent(dirStr)}&files=${encodeURIComponent(filename || "")}`;
+
+                console.log(`Generated Download URL: ${finalSrc}`);
 
                 photos.push({
                     id: Math.random().toString(36).substr(2, 9),
                     src: finalSrc,
                     width: 1920,
                     height: 1080,
-                    alt: filename
+                    alt: filename || "Nextcloud Image"
                 });
             }
         }
