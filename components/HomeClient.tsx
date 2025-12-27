@@ -10,7 +10,7 @@ import { type Gallery } from "@/lib/data";
 
 export default function HomeClient({ initialGalleries }: { initialGalleries: Gallery[] }) {
     const [query, setQuery] = useState("");
-    const [query, setQuery] = useState("");
+
 
     const filteredGalleries = initialGalleries.filter(g => {
         const matchesQuery = g.title.toLowerCase().includes(query.toLowerCase());
