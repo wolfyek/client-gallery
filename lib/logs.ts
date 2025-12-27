@@ -150,3 +150,35 @@ export async function logDownload(email: string, galleryTitle: string, photoId: 
         console.warn("Failed to persist download log (ReadOnly FS).", e);
     }
 }
+
+export async function deleteLog(id: string, type: 'activity' | 'download') {
+    // DB Strategy
+    const db = getDB();
+    if (db) {
+        try {
+            const logs = await getLogs();
+            if (type === 'activity') {
+                logs.activity = logs.activity.filter(l => l.id !== id);
+            } else {
+                logs.downloads = logs.downloads.filter(l => l.id !== id);
+            }
+            await db.set('logs', logs);
+        } catch (e) {
+            console.error("Failed to delete log from DB.", e);
+        }
+        return;
+    }
+
+    // FS Strategy
+    try {
+        const logs = await getLogs();
+        if (type === 'activity') {
+            logs.activity = logs.activity.filter(l => l.id !== id);
+        } else {
+            logs.downloads = logs.downloads.filter(l => l.id !== id);
+        }
+        await fs.writeFile(LOGS_FILE, JSON.stringify(logs, null, 2));
+    } catch (e) {
+        console.warn("Failed to delete log (ReadOnly FS).", e);
+    }
+}

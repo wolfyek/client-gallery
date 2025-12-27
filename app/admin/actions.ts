@@ -4,7 +4,7 @@ import { deleteGallery, saveGallery, getGallery } from "@/lib/storage";
 import { Gallery, Photo } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { logActivity } from "@/lib/logs";
+import { logActivity, deleteLog } from "@/lib/logs";
 
 export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
     try {
@@ -241,4 +241,9 @@ export async function removeGallery(id: string) {
 
     revalidatePath("/");
     revalidatePath("/admin");
+}
+
+export async function removeLogAction(id: string, type: 'activity' | 'download') {
+    await deleteLog(id, type);
+    revalidatePath("/admin/logs");
 }
