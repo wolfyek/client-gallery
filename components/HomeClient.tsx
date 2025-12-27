@@ -10,15 +10,14 @@ import { type Gallery } from "@/lib/data";
 
 export default function HomeClient({ initialGalleries }: { initialGalleries: Gallery[] }) {
     const [query, setQuery] = useState("");
-    const [category, setCategory] = useState("");
+    const [query, setQuery] = useState("");
 
     const filteredGalleries = initialGalleries.filter(g => {
         const matchesQuery = g.title.toLowerCase().includes(query.toLowerCase());
-        const matchesCategory = category ? g.category === category : true;
-        return matchesQuery && matchesCategory;
+        return matchesQuery;
     });
 
-    const categories = ["Poroka", "Krst", "Rojstni dan", "Koncert", "Šport"];
+
 
     return (
         <main className="min-h-screen bg-[#121212] text-white pt-8">
@@ -97,30 +96,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                     <div className="w-full max-w-xs h-[1px] bg-white/20" />
                 </div>
 
-                {/* Category Filter Dropdown - Right Aligned */}
-                <div className="flex justify-end mb-8">
-                    <div className="relative w-full max-w-[180px]">
-                        <div className="relative">
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="w-full appearance-none bg-[#121212] border border-white/20 rounded-full py-2 pl-4 pr-10 text-xs text-white uppercase tracking-widest font-dm focus:outline-none focus:border-white transition-colors cursor-pointer text-center"
-                            >
-                                <option value="">KATEGORIJA</option>
-                                {categories.map((cat) => (
-                                    <option key={cat} value={cat}>
-                                        {cat.toUpperCase()}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-white/50">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 {/* Galleries Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10 min-h-[50vh]">
