@@ -1,18 +1,54 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Gallery } from './data';
-import { kv } from '@vercel/kv';
+import { kv, createClient } from '@vercel/kv';
+
+let kvClient = kv; // Default
+
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'galleries.json');
 
+// Helper to check if we are in a Vercel KV / Redis environment
+const getRedisUrl = () => {
+    return process.env.KV_REST_API_URL ||
+        process.env.KV_URL ||
+        process.env.REDIS_URL ||
+        process.env.UPSTASH_REDIS_REST_URL;
+};
+
+const getRedisToken = () => {
+    return process.env.KV_REST_API_TOKEN ||
+        process.env.KV_TOKEN ||
+        process.env.REDIS_TOKEN ||
+        process.env.UPSTASH_REDIS_REST_TOKEN;
+};
+
 function hasKV() {
-    return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+    const hasURL = !!getRedisUrl();
+    const hasToken = !!getRedisToken();
+    if (!hasURL || !hasToken) {
+        console.log(`[Debug] hasKV Check: URL=${hasURL}, Token=${hasToken}`);
+        // Debug: Log available keys to see what Vercel injected (Security: Don't log values)
+        const envKeys = Object.keys(process.env).filter(k => k.includes('KV') || k.includes('REDIS') || k.includes('URL') || k.includes('TOKEN'));
+        console.log(`[Debug] Available Env Keys: ${envKeys.join(', ')}`);
+    }
+    return hasURL && hasToken;
+}
+
+function getKVClient() {
+    const url = getRedisUrl();
+    const token = getRedisToken();
+    if (url && token) {
+        return createClient({ url, token });
+    }
+    return kv;
 }
 
 export async function getGalleries(): Promise<Gallery[]> {
     if (hasKV()) {
         try {
-            const data = await kv.get<Gallery[]>('galleries');
+            const client = getKVClient();
+            const data = await client.get<Gallery[]>('galleries');
             return data || [];
         } catch (error) {
             console.error("KV Read Error:", error);
@@ -35,7 +71,8 @@ export async function getGalleries(): Promise<Gallery[]> {
 export async function saveGalleries(galleries: Gallery[]) {
     if (hasKV()) {
         try {
-            await kv.set('galleries', galleries);
+            const client = getKVClient();
+            await client.set('galleries', galleries);
             // Optional: Also try to write to disk if we are in a mixed environment, 
             // but on Vercel this will fail and we catch it below. 
             // For now, KV is the source of truth if active.
