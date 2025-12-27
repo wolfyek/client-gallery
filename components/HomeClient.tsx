@@ -122,6 +122,21 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                             </div>
                         </div>
                     </div>
+
+                    {/* Mobile Search - Below Categories */}
+                    <div className="md:hidden w-full max-w-[200px] mt-2 group">
+                        <div className="relative w-full">
+                            <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 text-white/50 group-focus-within:text-white transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="ISKANJE..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full bg-transparent border-b border-white/20 py-2 pl-6 text-xs text-white focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 uppercase tracking-widest font-dm text-center"
+                            />
+                        </div>
+                    </div>
+
                 </div>
 
 
