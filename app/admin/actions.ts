@@ -113,8 +113,14 @@ export async function createGallery(formData: FormData) {
         photos
     };
 
-    await saveGallery(newGallery);
-    await logActivity('CREATE_GALLERY', `Created gallery: ${title} (${photos.length} photos)`);
+    try {
+        await saveGallery(newGallery);
+        await logActivity('CREATE_GALLERY', `Created gallery: ${title} (${photos.length} photos)`);
+    } catch (e: any) {
+        // Next.js redirects are thrown as errors, so we must rethrow them if they happen inside saveGallery (unlikely) or just handle logic errors.
+        console.error("Create Gallery Error:", e);
+        throw new Error(`Failed to create gallery: ${e.message}`);
+    }
 
     revalidatePath("/");
     revalidatePath("/admin");
@@ -157,8 +163,13 @@ export async function updateGallery(id: string, formData: FormData) {
         photos
     };
 
-    await saveGallery(updated);
-    await logActivity('UPDATE_GALLERY', `Updated gallery: ${title} (Total: ${photos.length} photos)`);
+    try {
+        await saveGallery(updated);
+        await logActivity('UPDATE_GALLERY', `Updated gallery: ${title} (Total: ${photos.length} photos)`);
+    } catch (e: any) {
+        console.error("Update Gallery Error:", e);
+        throw new Error(`Failed to update gallery: ${e.message}`);
+    }
 
     revalidatePath("/");
     revalidatePath("/admin");

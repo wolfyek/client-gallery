@@ -27,46 +27,66 @@ type LogsData = {
     downloads: DownloadLog[];
 };
 
+
 async function ensureLogsFile() {
     try {
         await fs.access(LOGS_FILE);
     } catch {
-        const initialData: LogsData = { activity: [], downloads: [] };
-        await fs.mkdir(path.dirname(LOGS_FILE), { recursive: true });
-        await fs.writeFile(LOGS_FILE, JSON.stringify(initialData, null, 2));
+        try {
+            const initialData: LogsData = { activity: [], downloads: [] };
+            await fs.mkdir(path.dirname(LOGS_FILE), { recursive: true });
+            await fs.writeFile(LOGS_FILE, JSON.stringify(initialData, null, 2));
+        } catch (e) {
+            console.warn("Could not create logs file (likely Read-Only Environment). Logs will be ephemeral.", e);
+        }
     }
 }
 
 export async function getLogs(): Promise<LogsData> {
-    await ensureLogsFile();
-    const data = await fs.readFile(LOGS_FILE, "utf-8");
-    return JSON.parse(data);
+    try {
+        await ensureLogsFile();
+        const data = await fs.readFile(LOGS_FILE, "utf-8");
+        return JSON.parse(data);
+    } catch (e) {
+        console.warn("Could not read logs file (likely Read-Only Environment). Returning empty logs.", e);
+        return { activity: [], downloads: [] };
+    }
 }
 
 export async function logActivity(type: ActivityLog['type'], description: string, user: string = 'admin') {
-    const logs = await getLogs();
-    const newLog: ActivityLog = {
-        id: randomUUID(),
-        type,
-        description,
-        user,
-        timestamp: new Date().toISOString(),
-    };
-    logs.activity.unshift(newLog); // Add to beginning
-    await fs.writeFile(LOGS_FILE, JSON.stringify(logs, null, 2));
+    console.log(`[ACTIVITY] ${type}: ${description} (User: ${user})`);
+    try {
+        const logs = await getLogs();
+        const newLog: ActivityLog = {
+            id: randomUUID(),
+            type,
+            description,
+            user,
+            timestamp: new Date().toISOString(),
+        };
+        logs.activity.unshift(newLog); // Add to beginning
+        await fs.writeFile(LOGS_FILE, JSON.stringify(logs, null, 2));
+    } catch (e) {
+        console.warn("Failed to persist activity log (ReadOnly FS).", e);
+    }
 }
 
 export async function logDownload(email: string, galleryTitle: string, photoId: string, photoSrc: string, photoName: string) {
-    const logs = await getLogs();
-    const newLog: DownloadLog = {
-        id: randomUUID(),
-        email,
-        galleryTitle,
-        photoId,
-        photoSrc,
-        photoName,
-        timestamp: new Date().toISOString(),
-    };
-    logs.downloads.unshift(newLog); // Add to beginning
-    await fs.writeFile(LOGS_FILE, JSON.stringify(logs, null, 2));
+    console.log(`[DOWNLOAD] ${email} downloaded ${photoName} from ${galleryTitle}`);
+    try {
+        const logs = await getLogs();
+        const newLog: DownloadLog = {
+            id: randomUUID(),
+            email,
+            galleryTitle,
+            photoId,
+            photoSrc,
+            photoName,
+            timestamp: new Date().toISOString(),
+        };
+        logs.downloads.unshift(newLog); // Add to beginning
+        await fs.writeFile(LOGS_FILE, JSON.stringify(logs, null, 2));
+    } catch (e) {
+        console.warn("Failed to persist download log (ReadOnly FS).", e);
+    }
 }

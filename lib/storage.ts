@@ -71,8 +71,15 @@ export async function saveGalleries(galleries: Gallery[]) {
             }
         }
 
-        await ensureDataDir();
-        await fs.writeFile(DATA_FILE, JSON.stringify(galleries, null, 2), 'utf-8');
+        try {
+            await ensureDataDir();
+            await fs.writeFile(DATA_FILE, JSON.stringify(galleries, null, 2), 'utf-8');
+        } catch (e) {
+            console.error("CRITICAL STORAGE ERROR: Could not write to local file.", e);
+            // On Vercel, this WILL fail if not using KV. We swallow the error so the request doesn't crash 500,
+            // but obviously data won't persist.
+            throw new Error("Storage Error: Cannot save changes (File System is Read-Only and no KV configured).");
+        }
     }
 }
 
