@@ -115,7 +115,8 @@ export async function createGallery(formData: FormData) {
 
     try {
         await saveGallery(newGallery);
-        await logActivity('CREATE_GALLERY', `Created gallery: ${title} (${photos.length} photos)`);
+        const user = process.env.ADMIN_USERNAME || "Admin";
+        await logActivity('CREATE_GALLERY', `Created gallery: ${title} (${photos.length} photos)`, user);
     } catch (e: any) {
         console.error("Create Gallery Error:", e);
         // Return the error instead of throwing to avoid Next.js masking it
@@ -166,7 +167,8 @@ export async function updateGallery(id: string, formData: FormData) {
 
     try {
         await saveGallery(updated);
-        await logActivity('UPDATE_GALLERY', `Updated gallery: ${title} (Total: ${photos.length} photos)`);
+        const user = process.env.ADMIN_USERNAME || "Admin";
+        await logActivity('UPDATE_GALLERY', `Updated gallery: ${title} (Total: ${photos.length} photos)`, user);
     } catch (e: any) {
         console.error("Update Gallery Error:", e);
         return { error: e.message || "Failed to update gallery" };
@@ -209,7 +211,8 @@ export async function updateGalleryMetadata(
         };
 
         await saveGallery(updated);
-        await logActivity('UPDATE_GALLERY', `Updated metadata: ${data.title}`);
+        const user = process.env.ADMIN_USERNAME || "Admin";
+        await logActivity('UPDATE_GALLERY', `Updated metadata: ${data.title}`, user);
 
         // FORCE READ-BACK VERIFICATION
         const verify = await getGallery(id);

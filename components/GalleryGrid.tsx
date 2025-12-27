@@ -19,7 +19,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     // Email Tracking State
     const [userEmail, setUserEmail] = useState<string>("");
     const [showEmailModal, setShowEmailModal] = useState(false);
-    const [pendingDownload, setPendingDownload] = useState<(() => void) | null>(null);
+    const [pendingDownload, setPendingDownload] = useState<((email: string) => void) | null>(null);
     const emailInputRef = useRef<HTMLInputElement>(null);
 
     const handleEmailSubmit = (e: React.FormEvent) => {
@@ -29,28 +29,28 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             setUserEmail(email);
             setShowEmailModal(false);
             if (pendingDownload) {
-                pendingDownload();
+                pendingDownload(email);
                 setPendingDownload(null);
             }
         }
     };
 
-    const requireEmail = (callback: () => void) => {
+    const requireEmail = (callback: (email: string) => void) => {
         if (userEmail) {
-            callback();
+            callback(userEmail);
         } else {
             setPendingDownload(() => callback);
             setShowEmailModal(true);
         }
     };
 
-    const performDownloadAll = async () => {
+    const performDownloadAll = async (currentEmail: string) => {
         setIsZipping(true);
         setZipProgress(0);
 
         // Log the bulk download (using first image as representative)
         if (photos.length > 0) {
-            await recordDownload(userEmail, galleryTitle, "ZIP-ARCHIVE", photos[0].src, `${galleryTitle}.zip`);
+            await recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE", photos[0].src, `${galleryTitle}.zip`);
         }
 
         try {
@@ -88,10 +88,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         requireEmail(performDownloadAll);
     };
 
-    const performSingleDownload = async () => {
+    const performSingleDownload = async (currentEmail: string) => {
         if (selectedPhoto) {
             const filename = selectedPhoto.alt || `photo-${selectedPhoto.id}.jpg`;
-            await recordDownload(userEmail, galleryTitle, selectedPhoto.id, selectedPhoto.src, filename);
+            await recordDownload(currentEmail, galleryTitle, selectedPhoto.id, selectedPhoto.src, filename);
             downloadImage(selectedPhoto.src, filename);
         }
     };
