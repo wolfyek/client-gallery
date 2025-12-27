@@ -26,31 +26,4 @@ export function downloadImage(url: string, filename: string) {
     document.body.removeChild(link);
 }
 
-export function getNextcloudPreviewUrl(proxyUrl: string, width = 1024, height = 1024) {
-    if (!proxyUrl || !proxyUrl.startsWith('/api/proxy')) return null;
 
-    try {
-        // Use a dummy base for relative URLs
-        const urlObj = new URL(proxyUrl, 'http://dummy.com');
-        const params = urlObj.searchParams;
-        const server = params.get('server');
-        const token = params.get('token');
-        const path = params.get('path');
-
-        if (!server || !token || !path) return null;
-
-        // Construct Nextcloud Preview URL
-        // Standard format: /index.php/core/preview.png?file={path}&x={width}&y={height}&a=true&t={token}
-        const previewUrl = new URL(`${server}/index.php/core/preview.png`);
-        previewUrl.searchParams.set('file', path);
-        previewUrl.searchParams.set('x', width.toString());
-        previewUrl.searchParams.set('y', height.toString());
-        previewUrl.searchParams.set('a', 'true'); // 'a' usually stands for auth/authenticated or specific mode, dependent on NC version but harmless
-        previewUrl.searchParams.set('t', token);
-
-        return previewUrl.toString();
-    } catch (e) {
-        console.error("Error parsing proxy URL for preview:", e);
-        return null;
-    }
-}

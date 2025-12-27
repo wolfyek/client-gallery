@@ -4,6 +4,7 @@ export type Photo = {
     width: number;
     height: number;
     alt: string;
+    previewSrc?: string; // Optional URL for optimized web display
 };
 
 export type Gallery = {

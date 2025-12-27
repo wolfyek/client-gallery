@@ -8,7 +8,7 @@ import { logActivity, deleteLog } from "@/lib/logs";
 
 export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
     try {
-        console.log("Starting Nextcloud import (Download Mode v2) for:", shareUrl);
+        console.log("Starting Nextcloud import (Dual-Resolution Mode) for:", shareUrl);
 
         // 1. Extract Token and Base URL
         const url = new URL(shareUrl);
@@ -45,8 +45,8 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         // 3. Regex Parsing
         const hrefRegex = /<([a-z0-9]+:)?href>([^<]+)<\/([a-z0-9]+:)?href>/gi;
 
-        const photos: Photo[] = [];
         let match;
+        const foundFiles: { path: string, filename: string, folder: string, proxyUrl: string }[] = [];
 
         // Loop through all matches
         while ((match = hrefRegex.exec(xmlText)) !== null) {
@@ -54,7 +54,6 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             const decodedHref = decodeURIComponent(href);
 
             // Handle relative path extraction
-            // WebDAV path usually looks like /public.php/webdav/folder/image.jpg
             let relativePath = decodedHref;
             if (relativePath.includes('/public.php/webdav')) {
                 relativePath = relativePath.split('/public.php/webdav')[1];
@@ -71,34 +70,64 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             const isImage = filename.match(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             if (isImage) {
-                // Reconstruct directory path
-                let dirStr = pathParts.join('/');
-                if (!dirStr || dirStr === "") dirStr = "/";
+                // Determine folder (e.g. "Web" or "Full")
+                const parentFolder = pathParts[pathParts.length - 1]; // Last part before filename
 
                 // Construct PROXY URL
-                // We point to our own API which will tunnel the request via WebDAV
-                // Params: server, token, path (full path relative to share root)
-
-                // full relative path
                 const fullPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-
-                // We use the current Request's origin if possible, but here we generate a relative path string
-                // for the DB. The frontend will resolve it against the current domain.
                 const proxyUrl = `/api/proxy?server=${encodeURIComponent(baseUrl)}&token=${encodeURIComponent(token)}&path=${encodeURIComponent(fullPath)}`;
 
-                console.log(`Generated Proxy URL: ${proxyUrl}`);
-
-                photos.push({
-                    id: Math.random().toString(36).substr(2, 9),
-                    src: proxyUrl,
-                    width: 1920,
-                    height: 1080,
-                    alt: filename || "Nextcloud Image"
+                foundFiles.push({
+                    path: relativePath,
+                    filename: filename,
+                    folder: parentFolder,
+                    proxyUrl: proxyUrl
                 });
             }
         }
 
-        console.log(`Successfully found ${photos.length} images.`);
+        console.log(`Found ${foundFiles.length} total images. Sorting into Web/Full...`);
+
+        // 4. Pair "Full" and "Web" images
+        // Logic: "Full" (or anything not "Web") is the master. "Web" is the enhancement.
+        // We group by filename.
+
+        const fullPhotos: { [key: string]: typeof foundFiles[0] } = {};
+        const webPhotos: { [key: string]: typeof foundFiles[0] } = {};
+
+        foundFiles.forEach(file => {
+            // Check if folder is explicitly "Web" (case insensitive)
+            if (file.folder && file.folder.toLowerCase() === 'web') {
+                webPhotos[file.filename] = file;
+            } else {
+                // Everything else is treated as potential "Full" / Main photo
+                // If there are multiple "Full" folders, the last one wins (simple logic)
+                fullPhotos[file.filename] = file;
+            }
+        });
+
+        const photos: Photo[] = [];
+
+        // Create Photo objects from Full photos, attaching Web preview if available
+        for (const filename in fullPhotos) {
+            const full = fullPhotos[filename];
+            const web = webPhotos[filename];
+
+            photos.push({
+                id: Math.random().toString(36).substr(2, 9),
+                src: full.proxyUrl, // Download/HighRes URL
+                previewSrc: web ? web.proxyUrl : undefined, // Display URL (if Web exists)
+                width: 1920, // Default placeholders, actual size determined by loading
+                height: 1080,
+                alt: filename
+            });
+        }
+
+        // Optional: If you want to include "Web" photos that don't have a "Full" counterpart?
+        // Usually NO, because we want high quality downloads.
+        // We skip orphans in "Web".
+
+        console.log(`Result: ${photos.length} gallery items created.`);
         return photos;
 
     } catch (error) {
