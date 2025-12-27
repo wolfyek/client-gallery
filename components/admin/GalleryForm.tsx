@@ -95,9 +95,15 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
             // We use the hidden input 'photos' which is already managed by our state
             try {
                 const action = isEditing ? updateGallery.bind(null, gallery.id) : createGallery;
-                await action(formData);
+                const result = await action(formData);
+
+                // If the action returned an error object (instead of redirecting)
+                if (result && result.error) {
+                    alert(`Napaka pri shranjevanju: ${result.error}`);
+                }
             } catch (error) {
                 console.error("Submission error:", error);
+                // This catch might still catch the generic error if we missed something, but the above Result check should catch our explicit errors.
                 alert(`Napaka pri shranjevanju: ${error instanceof Error ? error.message : "Neznana napaka"}`);
             }
         }
