@@ -62,12 +62,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
-        // DEBUG: Alert the data being sent
-        const debugData = {
-            title: formData.get("title"),
-            downloadable: downloadable,
-        };
-        alert(`DEBUG: Sending: ${JSON.stringify(debugData)}`);
+
 
         if (isEditing && !hasPhotosChanged) {
             // OPTIMIZED PATH: Metadata only
@@ -80,7 +75,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     downloadable: downloadable,
                 });
                 if (result.success) {
-                    alert(`Spremembe shranjene!\nServer Verify: ${result['debugMessage'] || 'OK'}`);
+                    alert('Galerija uspešno posodobljena!');
                     window.location.href = "/admin";
                 } else {
                     throw new Error(result.error);
@@ -88,7 +83,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
             } catch (err) {
                 console.error(err);
                 const msg = err instanceof Error ? err.message : "Neznana napaka";
-                alert(`Napaka pri shranjevanju: ${msg}`);
+                alert(`Prišlo je do napake. ${msg}`);
             }
         } else {
             // FULL PATH: Create or Update with Photos
@@ -99,12 +94,15 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
                 // If the action returned an error object (instead of redirecting)
                 if (result && result.error) {
-                    alert(`Napaka pri shranjevanju: ${result.error}`);
+                    alert(`Prišlo je do napake. ${result.error}`);
+                } else if (result && result.success) {
+                    alert(isEditing ? 'Galerija uspešno posodobljena!' : 'Galerija uspešno ustvarjena!');
+                    window.location.href = "/admin";
                 }
             } catch (error) {
                 console.error("Submission error:", error);
                 // This catch might still catch the generic error if we missed something, but the above Result check should catch our explicit errors.
-                alert(`Napaka pri shranjevanju: ${error instanceof Error ? error.message : "Neznana napaka"}`);
+                alert(`Prišlo je do napake. ${error instanceof Error ? error.message : "Neznana napaka"}`);
             }
         }
     };

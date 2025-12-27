@@ -124,7 +124,8 @@ export async function createGallery(formData: FormData) {
 
     revalidatePath("/");
     revalidatePath("/admin");
-    redirect("/admin");
+
+    return { success: true };
 }
 
 export async function updateGallery(id: string, formData: FormData) {
@@ -174,8 +175,8 @@ export async function updateGallery(id: string, formData: FormData) {
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath(`/galerija/${id}`);
-    revalidatePath(`/galerija/${id}`);
-    redirect("/admin");
+
+    return { success: true };
 }
 
 export async function updateGalleryMetadata(
