@@ -8,7 +8,7 @@ import { logActivity, deleteLog } from "@/lib/logs";
 
 export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
     try {
-        console.log("Starting Nextcloud import (Preview Link Mode) for:", shareUrl);
+        console.log("Starting Nextcloud import (Download Mode v2) for:", shareUrl);
 
         // 1. Extract Token and Base URL
         const url = new URL(shareUrl);
@@ -25,7 +25,7 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
         console.log("Token:", token);
 
-        // 2. Fetch File List via WebDAV
+        // 2. Fetch File List via WebDAV (Recursive)
         const response = await fetch(webdavUrl, {
             method: 'PROPFIND',
             headers: {
@@ -62,31 +62,19 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
             if (!relativePath) continue;
 
-            const filename = relativePath.split('/').pop();
+            const pathParts = relativePath.split('/');
+            const filename = pathParts.pop();
+
             if (!filename) continue;
 
-            // Skip directories (simplistic check, but valid since we check extension)
-            if (relativePath.endsWith('/')) continue;
-
+            // Skip directories by checking extension
             const isImage = filename.match(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             if (isImage) {
-                // Construct Public Preview URL
-                // We use standard encodeURI to preserve slashes for the path
-                // Pattern: https://[host]/index.php/apps/files_sharing/publicpreview/[token]?file=/[subdir]/[filename]&x=1920&y=1080&a=true
-                // Ensure relativePath starts with /
-                const finalPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-
-                const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
-
-                // 1. Switch to DOWNLOAD endpoint
-                // Public Preview is flaky/broken. Download endpoint is robust for public shares.
-                // Format: https://[host]/index.php/s/[token]/download?path=[encoded_dir]&files=[encoded_filename]
-
-                const pathParts = finalPath.split('/');
-                const filename = pathParts.pop(); // Remove and get last part (filename)
+                // Reconstruct directory path
+                // If parts was ['', 'Folder', 'File.jpg'], pop -> 'File.jpg'. parts -> ['', 'Folder']. join -> '/Folder'
+                // If parts was ['', 'File.jpg'], pop -> 'File.jpg'. parts -> ['']. join -> '' -> needs to be '/'
                 let dirStr = pathParts.join('/');
-
                 // Ensure dir is at least "/"
                 if (!dirStr || dirStr === "") {
                     dirStr = "/";
