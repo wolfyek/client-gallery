@@ -73,16 +73,16 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             const isImage = filename.match(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             if (isImage) {
-                // Construct Direct Download URL
-                // Format: https://[host]/index.php/s/[token]/download?path=/[dir]&files=[filename]
+                // Construct Public Preview URL with correct full path
+                // Pattern: https://[host]/index.php/apps/files_sharing/publicpreview/[token]?file=/[subdir]/[filename]&x=1920&y=1080&a=true
 
-                // Ensure dir starts with /
-                const finalDir = dirStr.startsWith('/') ? dirStr : `/${dirStr}`;
+                // Ensure relativePath starts with /
+                const finalPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
-                const downloadBase = `${baseUrl}/index.php/s/${token}/download`;
-                const finalSrc = `${downloadBase}?path=${encodeURIComponent(finalDir)}&files=${encodeURIComponent(filename)}`;
+                const previewBase = `${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`;
+                const finalSrc = `${previewBase}?file=${encodeURIComponent(finalPath)}&x=1920&y=1080&a=true`;
 
-                console.log(`Generated Download URL: ${finalSrc}`);
+                console.log(`Generated Preview URL: ${finalSrc}`);
 
                 photos.push({
                     id: Math.random().toString(36).substr(2, 9),
