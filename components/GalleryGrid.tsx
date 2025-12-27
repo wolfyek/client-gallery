@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { type Photo } from "@/lib/data";
 import Image from "next/image";
 import { Download, X, ChevronLeft, ChevronRight, Archive, Check } from "lucide-react";
-import { downloadImage } from "@/lib/utils";
+import { downloadImage, getNextcloudPreviewUrl } from "@/lib/utils";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { recordDownload } from "@/app/actions/logging";
@@ -214,13 +214,14 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         {/* 16:10 Aspect Ratio Container */}
                         <div className="relative aspect-[16/10] w-full overflow-hidden">
                             <Image
-                                src={photo.src}
+                                src={getNextcloudPreviewUrl(photo.src, 800, 600) || photo.src}
                                 alt={photo.alt}
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                priority={i < 6}
+                                priority={i < 4}
                                 quality={75}
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                unoptimized={!!getNextcloudPreviewUrl(photo.src)} // If valid preview URL, skip Vercel optimization (NC does it)
                             />
                             {/* Overlay */}
                             <div
@@ -279,12 +280,13 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     }}
                                 >
                                     <Image
-                                        src={selectedPhoto.src}
+                                        src={getNextcloudPreviewUrl(selectedPhoto.src, 2048, 2048) || selectedPhoto.src}
                                         alt={selectedPhoto.alt}
                                         fill
                                         className="object-contain"
                                         quality={90}
                                         priority
+                                        unoptimized={!!getNextcloudPreviewUrl(selectedPhoto.src)}
                                     />
                                 </motion.div>
 
@@ -362,10 +364,24 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             {selectedPhoto && (
                 <div className="hidden">
                     {nextPhoto && (
-                        <Image src={nextPhoto.src} alt="preload-next" width={1} height={1} priority quality={50} />
+                        <Image
+                            src={getNextcloudPreviewUrl(nextPhoto.src, 2048, 2048) || nextPhoto.src}
+                            alt="preload-next"
+                            width={1}
+                            height={1}
+                            priority
+                            unoptimized={!!getNextcloudPreviewUrl(nextPhoto.src)}
+                        />
                     )}
                     {prevPhoto && (
-                        <Image src={prevPhoto.src} alt="preload-prev" width={1} height={1} priority quality={50} />
+                        <Image
+                            src={getNextcloudPreviewUrl(prevPhoto.src, 2048, 2048) || prevPhoto.src}
+                            alt="preload-prev"
+                            width={1}
+                            height={1}
+                            priority
+                            unoptimized={!!getNextcloudPreviewUrl(prevPhoto.src)}
+                        />
                     )}
                 </div>
             )}
