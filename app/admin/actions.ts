@@ -99,35 +99,38 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         const groups: { [key: string]: { full?: typeof foundFiles[0], web?: typeof foundFiles[0] } } = {};
 
         foundFiles.forEach(file => {
-            let basename = file.filename.replace(/\.[^/.]+$/, ""); // Remove extension
-            let type: 'full' | 'web' = 'full'; // Default
+            // Normalize filename to create a "key" for pairing
+            // Strategy: Remove "_web" and "_full" (case insensitive) from the name
+            // Example: "Concert_Full (1).jpg" -> "Concert (1)"
+            // Example: "Concert_Web (1).jpg" -> "Concert (1)"
+            // This preserves the (1) so duplicates don't merge into one generic entry
 
-            // Detect Type by Suffix
-            if (basename.toLowerCase().endsWith('_web')) {
+            const nameWithoutExt = file.filename.replace(/\.[^/.]+$/, "");
+            const canonicalName = nameWithoutExt
+                .replace(/_web/gi, "")
+                .replace(/_full/gi, "")
+                .trim()
+                .toLowerCase();
+
+            let type: 'full' | 'web' = 'full'; // Default assumption
+
+            // Detect Type
+            const lowerName = nameWithoutExt.toLowerCase();
+            if (lowerName.includes('_web') || (file.folder && file.folder.toLowerCase() === 'web')) {
                 type = 'web';
-                basename = basename.substring(0, basename.length - 4); // Remove _Web
-            } else if (basename.toLowerCase().endsWith('_full')) {
+            } else if (lowerName.includes('_full') || (file.folder && file.folder.toLowerCase() === 'full')) {
                 type = 'full';
-                basename = basename.substring(0, basename.length - 5); // Remove _Full
             }
-            // Detect Type by Folder (Override if folder is explicit "Web", but keep suffix logic if folder is generic)
-            else if (file.folder && file.folder.toLowerCase() === 'web') {
-                type = 'web';
-            }
+            // If neither logic hits, we treat it as 'full' (master), assuming it's a standalone high-res image
 
-            // Normalize basename
-            basename = basename.toLowerCase().trim();
-
-            if (!groups[basename]) {
-                groups[basename] = {};
+            if (!groups[canonicalName]) {
+                groups[canonicalName] = {};
             }
 
-            // Assign
             if (type === 'web') {
-                // Prefer last found? Or first? Doesn't matter much.
-                groups[basename].web = file;
+                groups[canonicalName].web = file;
             } else {
-                groups[basename].full = file;
+                groups[canonicalName].full = file;
             }
         });
 
