@@ -8,7 +8,7 @@ import { logActivity, deleteLog } from "@/lib/logs";
 
 export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
     try {
-        console.log("Starting Nextcloud import (Dual-Resolution Mode) for:", shareUrl);
+        console.log("Starting Nextcloud import (Enhanced Dual-Resolution Mode) for:", shareUrl);
 
         // 1. Extract Token and Base URL
         const url = new URL(shareUrl);
@@ -89,45 +89,73 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         console.log(`Found ${foundFiles.length} total images. Sorting into Web/Full...`);
 
         // 4. Pair "Full" and "Web" images
-        // Logic: "Full" (or anything not "Web") is the master. "Web" is the enhancement.
-        // We group by "basename" (filename without extension) to handle .png vs .jpg differences.
+        // Logic: Group by "basename" (canonical name).
+        // Rules:
+        // - Naming: "Image_Web.jpg" -> Base: "Image", Type: Web
+        // - Naming: "Image_Full.jpg" -> Base: "Image", Type: Full
+        // - Folder: "Web/Image.jpg"   -> Base: "Image", Type: Web
+        // - Default: "Image.jpg"      -> Base: "Image", Type: Full (unless a better Full exists?)
 
-        const fullPhotos: { [key: string]: typeof foundFiles[0] } = {};
-        const webPhotos: { [key: string]: typeof foundFiles[0] } = {};
+        const groups: { [key: string]: { full?: typeof foundFiles[0], web?: typeof foundFiles[0] } } = {};
 
         foundFiles.forEach(file => {
-            // Strip extension (e.g. "image.jpg" -> "image", "my.photo.png" -> "my.photo")
-            const basename = file.filename.replace(/\.[^/.]+$/, "").toLowerCase();
+            let basename = file.filename.replace(/\.[^/.]+$/, ""); // Remove extension
+            let type: 'full' | 'web' = 'full'; // Default
 
-            // Check if folder is explicitly "Web" (case insensitive)
-            if (file.folder && file.folder.toLowerCase() === 'web') {
-                webPhotos[basename] = file;
+            // Detect Type by Suffix
+            if (basename.toLowerCase().endsWith('_web')) {
+                type = 'web';
+                basename = basename.substring(0, basename.length - 4); // Remove _Web
+            } else if (basename.toLowerCase().endsWith('_full')) {
+                type = 'full';
+                basename = basename.substring(0, basename.length - 5); // Remove _Full
+            }
+            // Detect Type by Folder (Override if folder is explicit "Web", but keep suffix logic if folder is generic)
+            else if (file.folder && file.folder.toLowerCase() === 'web') {
+                type = 'web';
+            }
+
+            // Normalize basename
+            basename = basename.toLowerCase().trim();
+
+            if (!groups[basename]) {
+                groups[basename] = {};
+            }
+
+            // Assign
+            if (type === 'web') {
+                // Prefer last found? Or first? Doesn't matter much.
+                groups[basename].web = file;
             } else {
-                // Everything else is treated as potential "Full" / Main photo
-                fullPhotos[basename] = file;
+                groups[basename].full = file;
             }
         });
 
         const photos: Photo[] = [];
 
-        // Create Photo objects from Full photos, attaching Web preview if available
-        for (const basename in fullPhotos) {
-            const full = fullPhotos[basename];
-            const web = webPhotos[basename];
+        // Create Photo objects
+        for (const basename in groups) {
+            const group = groups[basename];
+
+            // Must have at least one version.
+            // If we have Full, use it as Main. If we only have Web, should we skip?
+            // Decision: If we only have Web, we treat it as Main (fallback), but ideally we want Full.
+            // If we have both, Full is Main, Web is Preview.
+
+            const main = group.full || group.web;
+            const preview = group.web;
+
+            if (!main) continue;
 
             photos.push({
                 id: Math.random().toString(36).substr(2, 9),
-                src: full.proxyUrl, // Download/HighRes URL (Main)
-                previewSrc: web ? web.proxyUrl : undefined, // Display URL (Web version if exists)
-                width: 1920, // Default placeholders, actual size determined by loading
+                src: main.proxyUrl, // Download/HighRes URL
+                previewSrc: preview ? preview.proxyUrl : undefined, // Display URL (Web version if exists)
+                width: 1920,
                 height: 1080,
-                alt: full.filename // Use original filename as alt
+                alt: main.filename // Use original filename
             });
         }
-
-        // Optional: If you want to include "Web" photos that don't have a "Full" counterpart?
-        // Usually NO, because we want high quality downloads.
-        // We skip orphans in "Web".
 
         console.log(`Result: ${photos.length} gallery items created.`);
         return photos;

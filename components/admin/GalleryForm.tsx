@@ -227,7 +227,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
                     {photos.map((photo) => {
-                        const isCover = coverImage === photo.src;
+                        const isCover = coverImage === photo.src || coverImage === photo.previewSrc;
                         return (
                             <div
                                 key={photo.id}
@@ -236,14 +236,14 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                                     isCover ? "border-green-500" : "border-transparent bg-white/5"
                                 )}
                             >
-                                <Image src={photo.src} alt="preview" fill className={cn("object-cover transition-opacity", isCover ? "opacity-100" : "opacity-70 group-hover:opacity-100")} unoptimized />
+                                <Image src={photo.previewSrc || photo.src} alt="preview" fill className={cn("object-cover transition-opacity", isCover ? "opacity-100" : "opacity-70 group-hover:opacity-100")} unoptimized />
 
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                                     {!isCover && (
                                         <Button
                                             type="button"
                                             size="sm"
-                                            onClick={() => setCoverImage(photo.src)}
+                                            onClick={() => setCoverImage(photo.previewSrc || photo.src)}
                                             className="bg-white/20 hover:bg-white text-white hover:text-black gap-2 text-xs uppercase tracking-wider"
                                         >
                                             <Star className="w-3 h-3" /> Cover
