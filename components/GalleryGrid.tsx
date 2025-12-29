@@ -262,7 +262,19 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3 }}
-                                className="relative w-full h-full"
+                                className="relative w-full h-full cursor-grab active:cursor-grabbing"
+                                drag="x"
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={1}
+                                onDragEnd={(e, { offset, velocity }) => {
+                                    const swipe = offset.x;
+
+                                    if (swipe < -50) {
+                                        handleNext();
+                                    } else if (swipe > 50) {
+                                        handlePrev();
+                                    }
+                                }}
                                 onContextMenu={(e) => {
                                     if (!allowDownloads) {
                                         e.preventDefault();
