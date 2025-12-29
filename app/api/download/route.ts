@@ -10,8 +10,13 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error('Failed to fetch image');
+        const fetchUrl = fileUrl.startsWith('/')
+            ? `${request.nextUrl.origin}${fileUrl}`
+            : fileUrl;
+
+        console.log(`Proxying download for: ${fetchUrl}`);
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
 
         const blob = await response.blob();
         const headers = new Headers();
