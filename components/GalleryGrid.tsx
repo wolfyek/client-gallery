@@ -40,6 +40,40 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
     // Image Loading State
     const [isImageLoading, setIsImageLoading] = useState(true);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+
+    // Reset loading state on photo change
+    useEffect(() => {
+        setIsImageLoading(true);
+        setLoadingProgress(0);
+
+        // Simulate progress
+        const interval = setInterval(() => {
+            setLoadingProgress(prev => {
+                if (prev >= 90) return prev;
+                return prev + 10;
+            });
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [selectedPhoto?.id]);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+
+    // Reset loading state on photo change
+    useEffect(() => {
+        setIsImageLoading(true);
+        setLoadingProgress(0);
+
+        // Simulate progress
+        const interval = setInterval(() => {
+            setLoadingProgress(prev => {
+                if (prev >= 90) return prev;
+                return prev + 10;
+            });
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, [selectedPhoto?.id]);
 
     // Email Tracking State
     const [userEmail, setUserEmail] = useState<string>("");
@@ -283,20 +317,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         {/* Main Container */}
                         <div className="relative w-full h-full max-w-7xl flex flex-col items-center justify-center pointer-events-none" onClick={(e) => e.stopPropagation()}>
 
-                            {/* Navigation Arrows - Fixed Position relative to overlay, pointer-events-auto */}
-                            <button
-                                className="fixed left-2 md:left-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all pointer-events-auto"
-                                onClick={handlePrev}
-                            >
-                                <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
-                            </button>
 
-                            <button
-                                className="fixed right-2 md:right-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all pointer-events-auto"
-                                onClick={handleNext}
-                            >
-                                <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
-                            </button>
 
 
                             {/* Image Wrapper - Intrinsic Sizing */}
