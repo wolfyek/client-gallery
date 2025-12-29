@@ -244,7 +244,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-0 md:p-4"
                         onClick={() => setSelectedPhoto(null)}
                     >
                         {/* Close Button */}
@@ -252,63 +252,60 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                             <X className="w-8 h-8" />
                         </button>
 
-                        {/* Main Container: Arrow - Image - Arrow */}
-                        <div className="flex items-center justify-center gap-4 md:gap-8 w-full h-full max-w-7xl" onClick={(e) => e.stopPropagation()}>
 
-                            {/* Left Arrow */}
+                        {/* Main Container */}
+                        <div className="relative w-full h-full max-w-7xl flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+
+                            {/* Image Container */}
+                            <motion.div
+                                key={selectedPhoto.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                                className="relative w-full h-full"
+                                onContextMenu={(e) => {
+                                    if (!allowDownloads) {
+                                        e.preventDefault();
+                                    }
+                                }}
+                            >
+                                <Image
+                                    src={selectedPhoto.previewSrc || selectedPhoto.src}
+                                    alt={selectedPhoto.alt}
+                                    fill
+                                    className="object-contain"
+                                    quality={90}
+                                    priority
+                                />
+                            </motion.div>
+
+                            {/* Navigation Arrows - Absolute Positioned */}
                             <button
-                                className="p-2 rounded-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                                className="absolute left-2 md:left-4 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all"
                                 onClick={handlePrev}
                             >
                                 <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
                             </button>
 
-                            <div className="flex flex-col items-center space-y-4 relative w-full h-full flex-1 justify-center">
-
-                                {/* Image Container */}
-                                <motion.div
-                                    key={selectedPhoto.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="relative w-full h-full"
-                                    onContextMenu={(e) => {
-                                        if (!allowDownloads) {
-                                            e.preventDefault();
-                                        }
-                                    }}
-                                >
-                                    <Image
-                                        src={selectedPhoto.previewSrc || selectedPhoto.src}
-                                        alt={selectedPhoto.alt}
-                                        fill
-                                        className="object-contain"
-                                        quality={90}
-                                        priority
-                                    />
-                                </motion.div>
-
-                                {/* Download Button */}
-                                {allowDownloads && (
-                                    <div className="absolute bottom-4 z-50">
-                                        <button
-                                            onClick={handleDownload}
-                                            className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs py-3 px-6 border border-white/10 hover:border-white/30 rounded-full hover:bg-black/70 font-dm"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            PRENESI
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Right Arrow */}
                             <button
-                                className="p-2 rounded-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                                className="absolute right-2 md:right-4 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all"
                                 onClick={handleNext}
                             >
                                 <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
                             </button>
+
+                            {/* Download Button */}
+                            {allowDownloads && (
+                                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
+                                    <button
+                                        onClick={handleDownload}
+                                        className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs py-3 px-6 border border-white/10 hover:border-white/30 rounded-full hover:bg-black/70 font-dm shadow-lg"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        PRENESI
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )}
