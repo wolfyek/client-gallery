@@ -16,6 +16,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     const [isZipping, setIsZipping] = useState(false);
     const [zipProgress, setZipProgress] = useState(0);
 
+    // Image Loading State
+    const [isImageLoading, setIsImageLoading] = useState(true);
+
     // Email Tracking State
     const [userEmail, setUserEmail] = useState<string>("");
     const [showEmailModal, setShowEmailModal] = useState(false);
@@ -254,33 +257,54 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
 
                         {/* Main Container */}
-                        <div className="relative w-full h-full max-w-7xl flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative w-full h-full max-w-7xl flex flex-col items-center justify-center pointer-events-none" onClick={(e) => e.stopPropagation()}>
 
-                            {/* Image Container */}
+                            {/* Navigation Arrows - Fixed Position relative to overlay, pointer-events-auto */}
+                            <button
+                                className="fixed left-2 md:left-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all pointer-events-auto"
+                                onClick={handlePrev}
+                            >
+                                <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
+                            </button>
+
+                            <button
+                                className="fixed right-2 md:right-4 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all pointer-events-auto"
+                                onClick={handleNext}
+                            >
+                                <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
+                            </button>
+
+
+                            {/* Image Wrapper - Aspect Ratio Constrained */}
                             <motion.div
                                 key={selectedPhoto.id}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3 }}
-                                className="relative w-full h-full cursor-grab active:cursor-grabbing"
+                                className="relative w-auto max-w-full pointer-events-auto cursor-grab active:cursor-grabbing"
+                                style={{
+                                    aspectRatio: selectedPhoto.width / selectedPhoto.height,
+                                    maxHeight: '70vh'
+                                }}
                                 drag="x"
                                 dragConstraints={{ left: 0, right: 0 }}
                                 dragElastic={1}
                                 onDragEnd={(e, { offset, velocity }) => {
                                     const swipe = offset.x;
-
-                                    if (swipe < -50) {
-                                        handleNext();
-                                    } else if (swipe > 50) {
-                                        handlePrev();
-                                    }
+                                    if (swipe < -50) handleNext();
+                                    else if (swipe > 50) handlePrev();
                                 }}
                                 onContextMenu={(e) => {
-                                    if (!allowDownloads) {
-                                        e.preventDefault();
-                                    }
+                                    if (!allowDownloads) e.preventDefault();
                                 }}
                             >
+                                {/* Loading Spinner */}
+                                {isImageLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                                        <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                                    </div>
+                                )}
+
                                 <Image
                                     src={selectedPhoto.previewSrc || selectedPhoto.src}
                                     alt={selectedPhoto.alt}
@@ -288,27 +312,19 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     className="object-contain"
                                     quality={90}
                                     priority
+                                    onLoadStart={() => setIsImageLoading(true)}
+                                    onLoadingComplete={() => setIsImageLoading(false)}
                                 />
                             </motion.div>
 
-                            {/* Navigation Arrows - Absolute Positioned */}
-                            <button
-                                className="absolute left-2 md:left-4 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all"
-                                onClick={handlePrev}
-                            >
-                                <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
-                            </button>
-
-                            <button
-                                className="absolute right-2 md:right-4 z-50 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 backdrop-blur-sm transition-all"
-                                onClick={handleNext}
-                            >
-                                <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
-                            </button>
-
-                            {/* Download Button */}
+                            {/* Download Button - Below Image */}
                             {allowDownloads && (
-                                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="mt-6 pointer-events-auto relative z-50"
+                                >
                                     <button
                                         onClick={handleDownload}
                                         className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs py-3 px-6 border border-white/10 hover:border-white/30 rounded-full hover:bg-black/70 font-dm shadow-lg"
@@ -316,9 +332,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         <Download className="w-4 h-4" />
                                         PRENESI
                                     </button>
-                                </div>
+                                </motion.div>
                             )}
                         </div>
+
+
                     </motion.div>
                 )}
             </AnimatePresence>
