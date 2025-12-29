@@ -317,11 +317,12 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         x: { type: "spring", stiffness: 300, damping: 30 },
                                         opacity: { duration: 0.2 }
                                     }}
-                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing max-w-full"
+                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing"
                                     style={{
-                                        aspectRatio: selectedPhoto.width / selectedPhoto.height,
-                                        maxHeight: '70vh',
-                                        width: 'auto'
+                                        width: `min(100vw, 85vh * ${selectedPhoto.width / selectedPhoto.height})`,
+                                        height: `min(85vh, 100vw / ${selectedPhoto.width / selectedPhoto.height})`,
+                                        maxWidth: '100vw',
+                                        maxHeight: '85vh'
                                     }}
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
@@ -335,22 +336,22 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         if (!allowDownloads) e.preventDefault();
                                     }}
                                 >
-                                    {/* Navigation Arrows - Centered on Image */}
+                                    {/* Navigation Arrows - Strictly Inside Container */}
                                     <button
-                                        className="absolute -left-2 md:-left-16 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full text-white/70 hover:text-white transition-all drop-shadow-lg"
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full text-white/70 hover:text-white transition-all drop-shadow-lg"
                                         onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                                     >
                                         <ChevronLeft className="w-8 h-8 md:w-10 md:h-10 filter drop-shadow-md" />
                                     </button>
 
                                     <button
-                                        className="absolute -right-2 md:-right-16 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full text-white/70 hover:text-white transition-all drop-shadow-lg"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full text-white/70 hover:text-white transition-all drop-shadow-lg"
                                         onClick={(e) => { e.stopPropagation(); handleNext(); }}
                                     >
                                         <ChevronRight className="w-8 h-8 md:w-10 md:h-10 filter drop-shadow-md" />
                                     </button>
 
-                                    {/* Circular Progress Loading Indicator */}
+                                    {/* Circular Progress Loading Indicator - Explicitly sized container ensures visibility */}
                                     {isImageLoading && (
                                         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none bg-black/20 backdrop-blur-[2px] rounded-lg">
                                             <div className="relative w-12 h-12">
@@ -382,8 +383,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         alt={selectedPhoto.alt}
                                         width={selectedPhoto.width}
                                         height={selectedPhoto.height}
-                                        className="object-contain w-full h-full"
-                                        style={{ height: '100%', width: '100%' }}
+                                        className="w-full h-full object-contain"
                                         quality={90}
                                         priority
                                         onLoadStart={() => {
