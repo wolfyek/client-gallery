@@ -8,6 +8,7 @@ import { createGallery, updateGallery, updateGalleryMetadata, importFromNextclou
 import { X, Plus, Image as ImageIcon, Download, Star, Check } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { Reorder } from "framer-motion";
 
 export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [photos, setPhotos] = useState<Photo[]>(gallery?.photos || []);
@@ -225,24 +226,35 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+                <Reorder.Group
+                    axis="y"
+                    onReorder={(newOrder) => {
+                        setPhotos(newOrder);
+                        setHasPhotosChanged(true);
+                    }}
+                    values={photos}
+                    layoutScroll
+                    className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4"
+                >
                     {photos.map((photo) => {
                         const isCover = coverImage === photo.src || coverImage === photo.previewSrc;
                         return (
-                            <div
+                            <Reorder.Item
                                 key={photo.id}
+                                value={photo}
                                 className={cn(
-                                    "relative aspect-square group rounded-md overflow-hidden transition-all border-2",
+                                    "relative aspect-square group rounded-md overflow-hidden transition-all border-2 cursor-grab active:cursor-grabbing",
                                     isCover ? "border-green-500" : "border-transparent bg-white/5"
                                 )}
                             >
-                                <Image src={photo.previewSrc || photo.src} alt="preview" fill className={cn("object-cover transition-opacity", isCover ? "opacity-100" : "opacity-70 group-hover:opacity-100")} unoptimized />
+                                <Image src={photo.previewSrc || photo.src} alt="preview" fill className={cn("object-cover transition-opacity pointer-events-none", isCover ? "opacity-100" : "opacity-70 group-hover:opacity-100")} unoptimized />
 
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                                     {!isCover && (
                                         <Button
                                             type="button"
                                             size="sm"
+                                            onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
                                             onClick={() => setCoverImage(photo.previewSrc || photo.src)}
                                             className="bg-white/20 hover:bg-white text-white hover:text-black gap-2 text-xs uppercase tracking-wider"
                                         >
@@ -252,6 +264,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                                     <Button
                                         type="button"
                                         size="sm"
+                                        onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
                                         onClick={() => removePhoto(photo.id)}
                                         className="bg-red-500/20 hover:bg-red-500 text-white gap-2 text-xs uppercase tracking-wider"
                                     >
@@ -264,10 +277,10 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                                         <Check className="w-3 h-3" /> COVER
                                     </div>
                                 )}
-                            </div>
+                            </Reorder.Item>
                         );
                     })}
-                </div>
+                </Reorder.Group>
             </div>
 
             <div className="pt-8 border-t border-white/10 flex justify-end">
