@@ -10,8 +10,30 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { recordDownload } from "@/app/actions/logging";
 
+// Animation Variants
+const slideVariants = {
+    enter: (direction: number) => ({
+        x: direction > 0 ? 1000 : -1000,
+        opacity: 0,
+        scale: 0.9
+    }),
+    center: {
+        zIndex: 1,
+        x: 0,
+        opacity: 1,
+        scale: 1
+    },
+    exit: (direction: number) => ({
+        zIndex: 0,
+        x: direction < 0 ? 1000 : -1000,
+        opacity: 0,
+        scale: 0.9
+    })
+};
+
 export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean }) {
     const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+    const [direction, setDirection] = useState(0);
     const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
     const [isZipping, setIsZipping] = useState(false);
     const [zipProgress, setZipProgress] = useState(0);
@@ -109,6 +131,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     const handleNext = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!selectedPhoto) return;
+        setDirection(1);
         const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
         const nextIndex = (currentIndex + 1) % photos.length;
         setSelectedPhoto(photos[nextIndex]);
@@ -117,6 +140,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     const handlePrev = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!selectedPhoto) return;
+        setDirection(-1);
         const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
         const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
         setSelectedPhoto(photos[prevIndex]);
@@ -275,47 +299,57 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                             </button>
 
 
-                            {/* Image Wrapper - Aspect Ratio Constrained */}
-                            <motion.div
-                                key={selectedPhoto.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.3 }}
-                                className="relative w-auto max-w-full pointer-events-auto cursor-grab active:cursor-grabbing"
-                                style={{
-                                    aspectRatio: selectedPhoto.width / selectedPhoto.height,
-                                    maxHeight: '70vh'
-                                }}
-                                drag="x"
-                                dragConstraints={{ left: 0, right: 0 }}
-                                dragElastic={1}
-                                onDragEnd={(e, { offset, velocity }) => {
-                                    const swipe = offset.x;
-                                    if (swipe < -50) handleNext();
-                                    else if (swipe > 50) handlePrev();
-                                }}
-                                onContextMenu={(e) => {
-                                    if (!allowDownloads) e.preventDefault();
-                                }}
-                            >
-                                {/* Loading Spinner */}
-                                {isImageLoading && (
-                                    <div className="absolute inset-0 flex items-center justify-center z-10">
-                                        <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                                    </div>
-                                )}
+                            {/* Image Wrapper - Intrinsic Sizing */}
+                            <AnimatePresence custom={direction} mode="popLayout">
+                                <motion.div
+                                    key={selectedPhoto.id}
+                                    custom={direction}
+                                    variants={slideVariants}
+                                    initial="enter"
+                                    animate="center"
+                                    exit="exit"
+                                    transition={{
+                                        x: { type: "spring", stiffness: 300, damping: 30 },
+                                        opacity: { duration: 0.2 }
+                                    }}
+                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing max-w-full"
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    dragElastic={0.7}
+                                    onDragEnd={(e, { offset, velocity }) => {
+                                        const swipe = offset.x;
+                                        if (swipe < -50) handleNext();
+                                        else if (swipe > 50) handlePrev();
+                                    }}
+                                    onContextMenu={(e) => {
+                                        if (!allowDownloads) e.preventDefault();
+                                    }}
+                                >
+                                    {/* Loading Spinner */}
+                                    {isImageLoading && (
+                                        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                                            <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                                        </div>
+                                    )}
 
-                                <Image
-                                    src={selectedPhoto.previewSrc || selectedPhoto.src}
-                                    alt={selectedPhoto.alt}
-                                    fill
-                                    className="object-contain"
-                                    quality={90}
-                                    priority
-                                    onLoadStart={() => setIsImageLoading(true)}
-                                    onLoadingComplete={() => setIsImageLoading(false)}
-                                />
-                            </motion.div>
+                                    <Image
+                                        src={selectedPhoto.previewSrc || selectedPhoto.src}
+                                        alt={selectedPhoto.alt}
+                                        width={selectedPhoto.width}
+                                        height={selectedPhoto.height}
+                                        style={{
+                                            maxWidth: '100vw',
+                                            maxHeight: '70vh',
+                                            width: 'auto',
+                                            height: 'auto'
+                                        }}
+                                        quality={90}
+                                        priority
+                                        onLoadStart={() => setIsImageLoading(true)}
+                                        onLoadingComplete={() => setIsImageLoading(false)}
+                                    />
+                                </motion.div>
+                            </AnimatePresence>
 
                             {/* Download Button - Below Image */}
                             {allowDownloads && (
