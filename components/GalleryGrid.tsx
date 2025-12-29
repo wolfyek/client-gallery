@@ -319,10 +319,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     }}
                                     className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing"
                                     style={{
-                                        width: `min(100vw, 85vh * ${selectedPhoto.width / selectedPhoto.height})`,
-                                        height: `min(85vh, 100vw / ${selectedPhoto.width / selectedPhoto.height})`,
+                                        width: `min(100vw, calc(100dvh - 80px) * ${selectedPhoto.width / selectedPhoto.height})`,
+                                        height: `min(calc(100dvh - 80px), 100vw / ${selectedPhoto.width / selectedPhoto.height})`,
                                         maxWidth: '100vw',
-                                        maxHeight: '85vh'
+                                        maxHeight: 'calc(100dvh - 80px)'
                                     }}
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
