@@ -57,23 +57,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
         return () => clearInterval(interval);
     }, [selectedPhoto?.id]);
-    const [loadingProgress, setLoadingProgress] = useState(0);
 
-    // Reset loading state on photo change
-    useEffect(() => {
-        setIsImageLoading(true);
-        setLoadingProgress(0);
-
-        // Simulate progress
-        const interval = setInterval(() => {
-            setLoadingProgress(prev => {
-                if (prev >= 90) return prev;
-                return prev + 10;
-            });
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, [selectedPhoto?.id]);
 
     // Email Tracking State
     const [userEmail, setUserEmail] = useState<string>("");
@@ -334,6 +318,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         opacity: { duration: 0.2 }
                                     }}
                                     className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing max-w-full"
+                                    style={{
+                                        aspectRatio: selectedPhoto.width / selectedPhoto.height,
+                                        maxHeight: '70vh',
+                                        width: 'auto'
+                                    }}
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
                                     dragElastic={0.7}
@@ -346,10 +335,45 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         if (!allowDownloads) e.preventDefault();
                                     }}
                                 >
-                                    {/* Loading Spinner */}
+                                    {/* Navigation Arrows - Centered on Image */}
+                                    <button
+                                        className="absolute -left-2 md:-left-16 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full text-white/70 hover:text-white transition-all drop-shadow-lg"
+                                        onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                                    >
+                                        <ChevronLeft className="w-8 h-8 md:w-10 md:h-10 filter drop-shadow-md" />
+                                    </button>
+
+                                    <button
+                                        className="absolute -right-2 md:-right-16 top-1/2 -translate-y-1/2 z-50 p-2 rounded-full text-white/70 hover:text-white transition-all drop-shadow-lg"
+                                        onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                                    >
+                                        <ChevronRight className="w-8 h-8 md:w-10 md:h-10 filter drop-shadow-md" />
+                                    </button>
+
+                                    {/* Circular Progress Loading Indicator */}
                                     {isImageLoading && (
-                                        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                                            <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                                        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none bg-black/20 backdrop-blur-[2px] rounded-lg">
+                                            <div className="relative w-12 h-12">
+                                                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                                    {/* Background Circle */}
+                                                    <path
+                                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                        fill="none"
+                                                        stroke="#ffffff"
+                                                        strokeWidth="3"
+                                                        strokeOpacity="0.2"
+                                                    />
+                                                    {/* Progress Circle */}
+                                                    <path
+                                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                        fill="none"
+                                                        stroke="#ffffff"
+                                                        strokeWidth="3"
+                                                        strokeDasharray={`${loadingProgress}, 100`}
+                                                        className="transition-all duration-300 ease-out"
+                                                    />
+                                                </svg>
+                                            </div>
                                         </div>
                                     )}
 
@@ -358,16 +382,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         alt={selectedPhoto.alt}
                                         width={selectedPhoto.width}
                                         height={selectedPhoto.height}
-                                        style={{
-                                            maxWidth: '100vw',
-                                            maxHeight: '70vh',
-                                            width: 'auto',
-                                            height: 'auto'
-                                        }}
+                                        className="object-contain w-full h-full"
+                                        style={{ height: '100%', width: '100%' }}
                                         quality={90}
                                         priority
-                                        onLoadStart={() => setIsImageLoading(true)}
-                                        onLoadingComplete={() => setIsImageLoading(false)}
+                                        onLoadStart={() => {
+                                            setIsImageLoading(true);
+                                            setLoadingProgress(10);
+                                        }}
+                                        onLoadingComplete={() => {
+                                            setLoadingProgress(100);
+                                            setTimeout(() => setIsImageLoading(false), 200);
+                                        }}
                                     />
                                 </motion.div>
                             </AnimatePresence>
