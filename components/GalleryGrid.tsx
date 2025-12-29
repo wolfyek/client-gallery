@@ -65,11 +65,20 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     const [pendingDownload, setPendingDownload] = useState<((email: string) => void) | null>(null);
     const emailInputRef = useRef<HTMLInputElement>(null);
 
+    // Restore email from local storage on mount
+    useEffect(() => {
+        const savedEmail = localStorage.getItem("gallery_user_email");
+        if (savedEmail) {
+            setUserEmail(savedEmail);
+        }
+    }, []);
+
     const handleEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const email = emailInputRef.current?.value;
         if (email && email.includes("@")) {
             setUserEmail(email);
+            localStorage.setItem("gallery_user_email", email);
             setShowEmailModal(false);
             if (pendingDownload) {
                 pendingDownload(email);
