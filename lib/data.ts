@@ -16,5 +16,6 @@ export type Gallery = {
     password?: string; // If undefined, it's public
     downloadable?: boolean; // Defaults to true if undefined
     category?: string;
+    slug?: string; // Custom URL slug
     photos: Photo[];
 };

@@ -149,6 +149,17 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 </div>
 
                 <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Slug / Povezava po meri (Opcijsko)</label>
+                    <Input
+                        name="slug"
+                        defaultValue={gallery?.slug}
+                        placeholder="npr. ime-priimek-dogodek (pusti prazno za avtomatsko)"
+                        className="bg-white/5 border-white/10 font-dm"
+                    />
+                    <p className="text-[10px] text-white/40 font-dm">Povezava bo: domain.com/galerija/vas-slug. Če prazno, se ustvari iz ID-ja.</p>
+                </div>
+
+                <div className="space-y-2">
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Kategorija</label>
                     <select
                         name="category"

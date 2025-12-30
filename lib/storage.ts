@@ -111,9 +111,9 @@ async function ensureDataDir() {
     }
 }
 
-export async function getGallery(id: string): Promise<Gallery | undefined> {
+export async function getGallery(idOrSlug: string): Promise<Gallery | undefined> {
     const galleries = await getGalleries();
-    return galleries.find((g) => g.id === id);
+    return galleries.find((g) => g.id === idOrSlug || g.slug === idOrSlug);
 }
 
 export async function saveGallery(gallery: Gallery) {

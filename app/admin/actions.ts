@@ -176,6 +176,7 @@ export async function createGallery(formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const category = formData.get("category") as string;
+    const slug = formData.get("slug") as string; // Get slug
     const downloadable = formData.get("downloadable") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const photosJson = formData.get("photos") as string;
@@ -195,6 +196,7 @@ export async function createGallery(formData: FormData) {
         password,
         coverImage,
         category,
+        slug: slug || undefined, // Save slug
         downloadable,
         photos
     };
@@ -202,10 +204,9 @@ export async function createGallery(formData: FormData) {
     try {
         await saveGallery(newGallery);
         const user = process.env.ADMIN_USERNAME || "Admin";
-        await logActivity('CREATE_GALLERY', `Created gallery: ${title} (${photos.length} photos)`, user);
+        await logActivity('CREATE_GALLERY', `Created gallery: ${title} (${photos.length} photos) [Slug: ${slug || 'none'}]`, user);
     } catch (e: any) {
         console.error("Create Gallery Error:", e);
-        // Return the error instead of throwing to avoid Next.js masking it
         return { error: e.message || "Failed to create gallery" };
     }
 
@@ -225,6 +226,7 @@ export async function updateGallery(id: string, formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const category = formData.get("category") as string;
+    const slug = formData.get("slug") as string; // Get slug
     const downloadable = formData.get("downloadable") === "on";
     const photosJson = formData.get("photos") as string;
 
@@ -249,6 +251,7 @@ export async function updateGallery(id: string, formData: FormData) {
         password,
         coverImage,
         category,
+        slug: slug || undefined, // Update slug
         downloadable,
         photos
     };
@@ -256,7 +259,7 @@ export async function updateGallery(id: string, formData: FormData) {
     try {
         await saveGallery(updated);
         const user = process.env.ADMIN_USERNAME || "Admin";
-        await logActivity('UPDATE_GALLERY', `Updated gallery: ${title} (Total: ${photos.length} photos)`, user);
+        await logActivity('UPDATE_GALLERY', `Updated gallery: ${title} (Total: ${photos.length} photos) [Slug: ${slug || 'none'}]`, user);
     } catch (e: any) {
         console.error("Update Gallery Error:", e);
         return { error: e.message || "Failed to update gallery" };
@@ -265,6 +268,7 @@ export async function updateGallery(id: string, formData: FormData) {
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath(`/galerija/${id}`);
+    if (slug) revalidatePath(`/galerija/${slug}`); // Revalidate slug path too
 
     return { success: true };
 }
@@ -277,6 +281,7 @@ export async function updateGalleryMetadata(
         password?: string;
         coverImage: string;
         category?: string;
+        slug?: string;
         downloadable: boolean;
         description?: string;
     }
@@ -296,6 +301,7 @@ export async function updateGalleryMetadata(
             password: data.password || undefined,
             coverImage: data.coverImage,
             category: data.category,
+            slug: data.slug || undefined,
             downloadable: data.downloadable,
             description: data.description || "",
         };
