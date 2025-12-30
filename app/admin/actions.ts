@@ -176,16 +176,20 @@ export async function createGallery(formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const category = formData.get("category") as string;
-    const slug = formData.get("slug") as string; // Get slug
-    const downloadable = formData.get("downloadable") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    // Validate ID Uniqueness (The auto-generated ID from Title)
+    const galleries = await getGalleries();
+    const idConflict = galleries.find(g => g.id === idStr || g.slug === idStr);
+    if (idConflict) {
+        return { error: `Naslov "${title}" generira ID "${idStr}", ki je že v uporabi (kot ID ali Slug). Prosim spremeni naslov.` };
+    }
 
     // Validate Slug Uniqueness
     if (slug) {
-        const galleries = await getGalleries();
         const conflict = galleries.find(g => g.slug === slug || g.id === slug);
         if (conflict) {
-            return { error: "Slug (povezava) je že v uporabi. Izberi drugega." };
+            return { error: `Slug (povezava) "${slug}" je že v uporabi. Izberi drugega.` };
         }
     }
 
@@ -244,7 +248,7 @@ export async function updateGallery(id: string, formData: FormData) {
         const galleries = await getGalleries();
         const conflict = galleries.find(g => (g.slug === slug || g.id === slug) && g.id !== id);
         if (conflict) {
-            return { error: "Slug (povezava) je že v uporabi. Izberi drugega." };
+            return { error: `Slug (povezava) "${slug}" je že v uporabi. Izberi drugega.` };
         }
     }
 
@@ -312,6 +316,14 @@ export async function updateGalleryMetadata(
         if (!existing) {
             console.error(`[MetadataUpdate] Gallery ${id} not found`);
             throw new Error("Gallery not found");
+        }
+
+        if (data.slug) {
+            const galleries = await getGalleries();
+            const conflict = galleries.find(g => (g.slug === data.slug || g.id === data.slug) && g.id !== id);
+            if (conflict) {
+                return { success: false, error: `Slug "${data.slug}" je že v uporabi.` };
+            }
         }
 
         const updated: Gallery = {
