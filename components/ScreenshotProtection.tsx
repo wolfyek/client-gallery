@@ -20,21 +20,31 @@ export default function ScreenshotProtection() {
         };
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // PrintScreen
+            // Mac: Cmd+Shift+3/4/5 and Windows: Win+Shift+S
+            // These usually fire on keydown before the OS grabs them (sometimes)
             if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
                 triggerOverlay();
             }
 
-            // Mac: Cmd+Shift+3 (Fullscreen), Cmd+Shift+4 (Selection), Cmd+Shift+5 (Recording/Options)
             if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === '5')) {
                 triggerOverlay();
             }
 
-            // Windows: Win+Shift+S (Snipping Tool)
-            // Note: 's' key might be case sensitive depending on Shift
             if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 's' || e.key === 'S')) {
                 triggerOverlay();
             }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            // PrintScreen often fires on KeyUp because OS intercepts KeyDown
+            if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+                triggerOverlay();
+            }
+        };
+
+        const handleCopy = (e: ClipboardEvent) => {
+            e.preventDefault();
+            triggerOverlay();
         };
 
         // Prevent Right Click
@@ -48,11 +58,15 @@ export default function ScreenshotProtection() {
         };
 
         window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('copy', handleCopy);
         window.addEventListener('contextmenu', handleContextMenu);
         window.addEventListener('dragstart', handleDragStart);
 
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('copy', handleCopy);
             window.removeEventListener('contextmenu', handleContextMenu);
             window.removeEventListener('dragstart', handleDragStart);
             if (timeout) clearTimeout(timeout);
