@@ -176,6 +176,8 @@ export async function createGallery(formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const category = formData.get("category") as string;
+    const slug = formData.get("slug") as string;
+    const downloadable = formData.get("downloadable") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
     // Validate ID Uniqueness (The auto-generated ID from Title)
@@ -240,7 +242,7 @@ export async function updateGallery(id: string, formData: FormData) {
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
     const category = formData.get("category") as string;
-    const slug = formData.get("slug") as string; // Get slug
+    const slug = formData.get("slug") as string;
     const downloadable = formData.get("downloadable") === "on";
 
     // Validate Slug Uniqueness (Exclude current gallery)
