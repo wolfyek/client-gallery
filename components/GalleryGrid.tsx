@@ -332,7 +332,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         opacity: { duration: 0.2 }
                                     }}
                                     className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing shrink-0 
-                                        w-[100vw] h-auto 
+                                        w-[92vw] h-auto 
                                         md:w-auto md:h-auto md:max-h-[calc(100vh-120px)] md:max-w-full"
                                     style={{
                                         // Only apply strict aspect ratio constraint on desktop to prevent layout jumping
@@ -397,7 +397,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         alt={selectedPhoto.alt}
                                         width={selectedPhoto.width} // Provide intrinsic width
                                         height={selectedPhoto.height} // Provide intrinsic height
-                                        className="w-full h-auto md:w-auto md:h-full md:object-contain max-h-[none] md:max-h-[calc(100vh-120px)]"
+                                        className="w-full h-auto rounded-lg shadow-2xl md:shadow-none md:rounded-none md:w-auto md:h-full md:object-contain max-h-[none] md:max-h-[calc(100vh-120px)]"
                                         quality={90}
                                         priority
                                         onLoadStart={() => {
