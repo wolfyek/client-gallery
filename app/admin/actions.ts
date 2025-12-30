@@ -1,6 +1,6 @@
 "use server";
 
-import { deleteGallery, saveGallery, getGallery } from "@/lib/storage";
+import { deleteGallery, saveGallery, getGallery, getGalleries } from "@/lib/storage";
 import { Gallery, Photo } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -179,6 +179,16 @@ export async function createGallery(formData: FormData) {
     const slug = formData.get("slug") as string; // Get slug
     const downloadable = formData.get("downloadable") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    // Validate Slug Uniqueness
+    if (slug) {
+        const galleries = await getGalleries();
+        const conflict = galleries.find(g => g.slug === slug || g.id === slug);
+        if (conflict) {
+            return { error: "Slug (povezava) je že v uporabi. Izberi drugega." };
+        }
+    }
+
     const photosJson = formData.get("photos") as string;
 
     let photos = [];
@@ -228,6 +238,16 @@ export async function updateGallery(id: string, formData: FormData) {
     const category = formData.get("category") as string;
     const slug = formData.get("slug") as string; // Get slug
     const downloadable = formData.get("downloadable") === "on";
+
+    // Validate Slug Uniqueness (Exclude current gallery)
+    if (slug) {
+        const galleries = await getGalleries();
+        const conflict = galleries.find(g => (g.slug === slug || g.id === slug) && g.id !== id);
+        if (conflict) {
+            return { error: "Slug (povezava) je že v uporabi. Izberi drugega." };
+        }
+    }
+
     const photosJson = formData.get("photos") as string;
 
     let photos = existing.photos;

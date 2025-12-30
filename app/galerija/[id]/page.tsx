@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { formatSlovenianDate } from "@/lib/utils";
 
+import { redirect } from "next/navigation";
+
 export default async function GalleryPage({ params }: { params: { id: string } }) {
     const gallery = await getGallery(params.id);
 
@@ -18,6 +20,12 @@ export default async function GalleryPage({ params }: { params: { id: string } }
                 </div>
             </div>
         );
+    }
+
+    // Canonical Redirection: If gallery has a slug but we accessed it via ID (or different casing), redirect.
+    // We check if params.id is NOT the slug, and a slug exists.
+    if (gallery.slug && params.id !== gallery.slug) {
+        redirect(`/galerija/${gallery.slug}`);
     }
 
     return (

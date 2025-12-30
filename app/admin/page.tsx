@@ -50,7 +50,7 @@ export default async function AdminDashboard() {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                                <Link href={`/galerija/${gallery.id}`} target="_blank" className="text-sm text-white/50 hover:text-white underline font-dm flex-1 md:flex-none">
+                                <Link href={`/galerija/${gallery.slug || gallery.id}`} target="_blank" className="text-sm text-white/50 hover:text-white underline font-dm flex-1 md:flex-none">
                                     Poglej Galerijo
                                 </Link>
                                 <div className="flex gap-2">
