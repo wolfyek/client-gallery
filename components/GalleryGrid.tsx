@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { type Photo } from "@/lib/data";
 import Image from "next/image";
@@ -494,7 +494,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 }
 
 function ScrollLock() {
-    useEffect(() => {
+    useLayoutEffect(() => {
         document.body.style.overflow = "hidden";
         return () => {
             document.body.style.overflow = "";
