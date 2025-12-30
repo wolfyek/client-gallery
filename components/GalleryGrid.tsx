@@ -332,12 +332,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         x: { type: "spring", stiffness: 300, damping: 30 },
                                         opacity: { duration: 0.2 }
                                     }}
-                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing"
+                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing w-screen h-auto md:w-auto md:h-auto md:max-h-[calc(100vh-120px)] md:max-w-full"
                                     style={{
                                         aspectRatio: `${selectedPhoto.width} / ${selectedPhoto.height}`,
-                                        maxWidth: '100vw',
-                                        width: '100vw', // Force full width
-                                        height: 'auto'
                                     }}
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
