@@ -301,20 +301,20 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-0 md:p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-0 md:p-4 overflow-y-auto overflow-x-hidden"
                         onClick={() => setSelectedPhoto(null)}
                     >
                         {/* Scroll Lock Effect */}
                         <ScrollLock />
 
                         {/* Close Button */}
-                        <button className="absolute top-4 right-4 text-white/50 hover:text-white z-50">
+                        <button className="fixed top-4 right-4 text-white/50 hover:text-white z-[60]">
                             <X className="w-8 h-8" />
                         </button>
 
 
                         {/* Main Container */}
-                        <div className="relative w-full h-full max-w-7xl flex flex-col items-center justify-center pointer-events-none" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative w-full min-h-full flex flex-col items-center justify-center pointer-events-none py-10 md:py-0" onClick={(e) => e.stopPropagation()}>
 
 
 
@@ -332,7 +332,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         x: { type: "spring", stiffness: 300, damping: 30 },
                                         opacity: { duration: 0.2 }
                                     }}
-                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing w-screen h-auto md:w-auto md:h-auto md:max-h-[calc(100vh-120px)] md:max-w-full"
+                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing shrink-0 w-screen h-auto md:w-auto md:h-auto md:max-h-[calc(100vh-120px)] md:max-w-full"
                                     style={{
                                         aspectRatio: `${selectedPhoto.width} / ${selectedPhoto.height}`,
                                     }}
