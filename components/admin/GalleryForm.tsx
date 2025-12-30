@@ -74,6 +74,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     password: formData.get("password") as string,
                     coverImage: formData.get("coverImage") as string,
                     category: formData.get("category") as string,
+                    slug: formData.get("slug") as string, // Added missing slug
                     downloadable: downloadable,
                 });
                 if (result.success) {
