@@ -262,11 +262,14 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: i * 0.05 }}
-                        className="relative group bg-gray-900 cursor-pointer"
+                        className="relative group bg-gray-900 cursor-pointer touch-manipulation"
                         onClick={() => setSelectedPhoto(photo)}
                     >
                         {/* 16:10 Aspect Ratio Container */}
-                        <div className="relative aspect-[16/10] w-full overflow-hidden">
+                        <div
+                            className="relative aspect-[16/10] w-full overflow-hidden"
+                            onClick={() => setSelectedPhoto(photo)}
+                        >
                             <Image
                                 src={photo.previewSrc || photo.src}
                                 alt={photo.alt}
@@ -278,7 +281,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                             />
                             {/* Overlay */}
                             <div
-                                className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200"
+                                className="absolute inset-0 bg-black/0 md:group-hover:bg-black/10 transition-colors duration-200"
                                 onContextMenu={(e) => {
                                     if (!allowDownloads) {
                                         e.preventDefault();
@@ -332,9 +335,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing"
                                     style={{
                                         aspectRatio: `${selectedPhoto.width} / ${selectedPhoto.height}`,
-                                        maxHeight: 'calc(100dvh - 140px)',
+                                        maxHeight: 'calc(100vh - 120px)',
                                         maxWidth: '100vw',
-                                        width: 'auto',
+                                        width: '100vw', // Force full viewport width
                                         height: 'auto'
                                     }}
                                     drag="x"
