@@ -262,13 +262,12 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: i * 0.05 }}
-                        className="relative group bg-gray-900 cursor-pointer touch-manipulation"
+                        className="relative group bg-gray-900 cursor-pointer touch-manipulation z-0"
                         onClick={() => setSelectedPhoto(photo)}
                     >
                         {/* 16:10 Aspect Ratio Container */}
                         <div
                             className="relative aspect-[16/10] w-full overflow-hidden"
-                            onClick={() => setSelectedPhoto(photo)}
                         >
                             <Image
                                 src={photo.previewSrc || photo.src}
@@ -301,7 +300,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-0 md:p-4 overflow-y-auto overflow-x-hidden"
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-0 md:p-4 overflow-y-auto overflow-x-hidden"
                         onClick={() => setSelectedPhoto(null)}
                     >
                         {/* Scroll Lock Effect */}
