@@ -1,3 +1,4 @@
+import ScreenshotProtection from "@/components/ScreenshotProtection";
 import type { Metadata, Viewport } from "next";
 import { Big_Shoulders_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
@@ -6,6 +7,7 @@ export const viewport: Viewport = {
     width: "device-width",
     initialScale: 1,
     maximumScale: 1,
+    userScalable: false, // Prevent zooming which can sometimes be used to workaround overlays
 };
 
 const bigShoulders = Big_Shoulders_Display({
@@ -34,7 +36,8 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={`${bigShoulders.variable} ${dmSans.variable} font-sans antialiased min-h-screen flex flex-col`}>
+            <body className={`${bigShoulders.variable} ${dmSans.variable} font-sans antialiased min-h-screen flex flex-col select-none`}>
+                <ScreenshotProtection />
                 {children}
 
                 <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8">
