@@ -261,7 +261,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         key={photo.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: i * 0.05 }}
+                        transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.5) }}
                         className="relative group bg-gray-900 cursor-pointer touch-manipulation z-0"
                         onClick={() => setSelectedPhoto(photo)}
                     >
