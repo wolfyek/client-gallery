@@ -182,3 +182,24 @@ export async function deleteLog(id: string, type: 'activity' | 'download') {
         console.warn("Failed to delete log (ReadOnly FS).", e);
     }
 }
+
+export async function deleteAllLogs() {
+    // DB Strategy
+    const db = getDB();
+    if (db) {
+        try {
+            await db.set('logs', { activity: [], downloads: [] });
+        } catch (e) {
+            console.error("Failed to delete all logs from DB.", e);
+        }
+        return;
+    }
+
+    // FS Strategy
+    try {
+        const emptyLogs: LogsData = { activity: [], downloads: [] };
+        await fs.writeFile(LOGS_FILE, JSON.stringify(emptyLogs, null, 2));
+    } catch (e) {
+        console.warn("Failed to delete all logs (ReadOnly FS).", e);
+    }
+}

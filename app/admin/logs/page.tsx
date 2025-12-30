@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowLeft, Download, Activity, Clock } from "lucide-react";
 import LogoutButton from "@/components/admin/LogoutButton";
 import LogDeleteButton from "@/components/admin/LogDeleteButton";
+import DeleteAllLogsButton from "@/components/admin/DeleteAllLogsButton";
 import { formatSlovenianDate } from "@/lib/utils";
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,7 @@ export default async function LogsPage() {
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-4">
                             <h1 className="text-3xl font-bold uppercase tracking-tighter">Dnevniki</h1>
+                            <DeleteAllLogsButton />
                             <LogoutButton />
                         </div>
                         <Link href="/admin" className="flex items-center gap-1 text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors w-fit font-dm">

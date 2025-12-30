@@ -301,6 +301,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-0 md:p-4"
                         onClick={() => setSelectedPhoto(null)}
                     >
+                        {/* Scroll Lock Effect */}
+                        <ScrollLock />
+
                         {/* Close Button */}
                         <button className="absolute top-4 right-4 text-white/50 hover:text-white z-50">
                             <X className="w-8 h-8" />
@@ -488,4 +491,14 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             )}
         </>
     );
+}
+
+function ScrollLock() {
+    useEffect(() => {
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, []);
+    return null;
 }
