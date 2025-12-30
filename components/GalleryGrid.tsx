@@ -331,9 +331,12 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         x: { type: "spring", stiffness: 300, damping: 30 },
                                         opacity: { duration: 0.2 }
                                     }}
-                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing shrink-0 w-screen h-auto md:w-auto md:h-auto md:max-h-[calc(100vh-120px)] md:max-w-full"
+                                    className="relative flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing shrink-0 
+                                        w-[100vw] h-auto 
+                                        md:w-auto md:h-auto md:max-h-[calc(100vh-120px)] md:max-w-full"
                                     style={{
-                                        aspectRatio: `${selectedPhoto.width} / ${selectedPhoto.height}`,
+                                        // Only apply strict aspect ratio constraint on desktop to prevent layout jumping
+                                        // On mobile, we trust natural height from width
                                     }}
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
@@ -392,9 +395,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     <Image
                                         src={selectedPhoto.previewSrc || selectedPhoto.src}
                                         alt={selectedPhoto.alt}
-                                        width={selectedPhoto.width}
-                                        height={selectedPhoto.height}
-                                        className="w-full h-full object-contain"
+                                        width={selectedPhoto.width} // Provide intrinsic width
+                                        height={selectedPhoto.height} // Provide intrinsic height
+                                        className="w-full h-auto md:w-auto md:h-full md:object-contain max-h-[none] md:max-h-[calc(100vh-120px)]"
                                         quality={90}
                                         priority
                                         onLoadStart={() => {
