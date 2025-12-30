@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock, ArrowLeft } from "lucide-react";
@@ -13,26 +13,48 @@ export default function PasswordGate({
     children,
     galleryTitle,
     coverImage,
+    galleryId,
 }: {
     correctPassword?: string;
     children: React.ReactNode;
     galleryTitle: string;
     coverImage: string;
+    galleryId: string;
 }) {
     const [password, setPassword] = useState("");
-    const [unlocked, setUnlocked] = useState(!correctPassword); // Unlock immediately if no password
+    const [unlocked, setUnlocked] = useState(false); // Default to locked initially, check effect will unlock
     const [error, setError] = useState(false);
+    const [isChecking, setIsChecking] = useState(true);
+
+    useEffect(() => {
+        // If no password required, unlock immediately
+        if (!correctPassword) {
+            setUnlocked(true);
+            setIsChecking(false);
+            return;
+        }
+
+        // Check local storage
+        const storedAuth = localStorage.getItem(`gallery_auth_${galleryId}`);
+        if (storedAuth === "true") {
+            setUnlocked(true);
+        }
+        setIsChecking(false);
+    }, [correctPassword, galleryId]);
 
     const handleUnlock = (e: React.FormEvent) => {
         e.preventDefault();
         if (password === correctPassword) {
             setUnlocked(true);
             setError(false);
+            localStorage.setItem(`gallery_auth_${galleryId}`, "true");
         } else {
             setError(true);
             // Shake animation trigger logic could go here
         }
     };
+
+    if (isChecking) return null; // Prevent flash of locked state
 
     if (!unlocked) {
         return (

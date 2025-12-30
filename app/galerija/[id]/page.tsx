@@ -33,6 +33,7 @@ export default async function GalleryPage({ params }: { params: { id: string } }
             correctPassword={gallery.password}
             galleryTitle={gallery.title}
             coverImage={gallery.coverImage}
+            galleryId={gallery.id}
         >
             <main className="min-h-screen bg-[#121212] text-white">
 
