@@ -75,10 +75,10 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
                 // Construct DIRECT Preview URL (Bypass Proxy)
                 // Endpoint: /index.php/apps/files_sharing/publicpreview/{token}
-                const cleanPath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+                const contentPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
                 const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
-                previewUrl.searchParams.set("file", cleanPath);
+                previewUrl.searchParams.set("file", contentPath);
                 previewUrl.searchParams.set("x", "1920");
                 previewUrl.searchParams.set("y", "1080");
                 previewUrl.searchParams.set("a", "true");

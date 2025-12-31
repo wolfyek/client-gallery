@@ -19,12 +19,11 @@ export async function GET(req: NextRequest) {
         // Ensure server doesn't have trailing slash
         const baseUrl = server.replace(/\/$/, "");
 
-        // Clean path: remove leading slash if present to be safe, though Nextcloud usually handles it.
-        // But for 'file' param, relative path 'Folder/Image.jpg' is safer than '/Folder/Image.jpg'
-        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        // Ensure path has leading slash (Nextcloud usually expects /Folder/File.jpg)
+        const contentPath = path.startsWith('/') ? path : `/${path}`;
 
         const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
-        previewUrl.searchParams.set("file", cleanPath);
+        previewUrl.searchParams.set("file", contentPath);
         previewUrl.searchParams.set("x", "1920");
         previewUrl.searchParams.set("y", "1080");
         previewUrl.searchParams.set("a", "true");
