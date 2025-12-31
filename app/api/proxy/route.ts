@@ -12,23 +12,26 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Construct Nextcloud Direct Download URL
-        // Format: https://{server}/s/{token}/download?path={dir}&files={filename}
+        // Construct Nextcloud Public Preview URL (Modern & Robust)
+        // Endpoint: /index.php/apps/files_sharing/publicpreview/{token}
+        // This endpoint returns 'Content-Disposition: inline' which allows <img> tags to work.
 
         // Ensure server doesn't have trailing slash
         const baseUrl = server.replace(/\/$/, "");
 
-        // Extract directory and filename from path
-        // Path input example: "/Folder/Image.jpg"
-        const lastSlashIndex = path.lastIndexOf('/');
-        const dir = path.substring(0, lastSlashIndex) || "/";
-        const filename = path.substring(lastSlashIndex + 1);
+        // Ensure path has leading slash
+        const contentPath = path.startsWith('/') ? path : `/${path}`;
 
-        const directUrl = new URL(`${baseUrl}/s/${token}/download`);
-        directUrl.searchParams.set("path", dir);
-        directUrl.searchParams.set("files", filename);
+        // Example: https://nc.netmedia.si/index.php/apps/files_sharing/publicpreview/{token}
+        const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
 
-        return NextResponse.redirect(directUrl.toString(), 307); // Temporary Redirect
+        previewUrl.searchParams.set("file", contentPath);
+        previewUrl.searchParams.set("x", "1920"); // HD Max
+        previewUrl.searchParams.set("y", "1080");
+        previewUrl.searchParams.set("a", "true"); // Aspect Ratio
+        previewUrl.searchParams.set("scalingup", "0");
+
+        return NextResponse.redirect(previewUrl.toString(), 307);
     } catch (e) {
         console.error("Redirect Error:", e);
         return new NextResponse("Internal Error", { status: 500 });

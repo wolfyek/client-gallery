@@ -269,12 +269,13 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         <div
                             className="relative aspect-[16/10] w-full overflow-hidden"
                         >
-                            <BlobImage
+                            <Image
                                 src={photo.previewSrc || photo.src}
                                 alt={photo.alt}
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 priority={i < 4}
+                                unoptimized
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             {/* Overlay */}
@@ -391,7 +392,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         </div>
                                     )}
 
-                                    <BlobImage
+                                    <Image
                                         src={selectedPhoto.previewSrc || selectedPhoto.src}
                                         alt={selectedPhoto.alt}
                                         width={selectedPhoto.width} // Provide intrinsic width
@@ -399,6 +400,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         className="w-full h-auto rounded-lg shadow-2xl md:shadow-none md:rounded-none md:w-auto md:h-full md:object-contain max-h-[none] md:max-h-[calc(100vh-120px)]"
                                         quality={90}
                                         priority
+                                        unoptimized
                                         onLoadStart={() => {
                                             setIsImageLoading(true);
                                             setLoadingProgress(10);
@@ -483,10 +485,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             {selectedPhoto && (
                 <div className="hidden">
                     {nextPhoto && (
-                        <BlobImage src={nextPhoto.previewSrc || nextPhoto.src} alt="preload-next" width={1} height={1} priority quality={50} />
+                        <Image src={nextPhoto.previewSrc || nextPhoto.src} alt="preload-next" width={1} height={1} priority quality={50} unoptimized />
                     )}
                     {prevPhoto && (
-                        <BlobImage src={prevPhoto.previewSrc || prevPhoto.src} alt="preload-prev" width={1} height={1} priority quality={50} />
+                        <Image src={prevPhoto.previewSrc || prevPhoto.src} alt="preload-prev" width={1} height={1} priority quality={50} unoptimized />
                     )}
                 </div>
             )}
@@ -502,61 +504,4 @@ function ScrollLock() {
         };
     }, []);
     return null;
-}
-
-// Custom Image Component that fetches Blob to bypass 'Attachment' header
-function BlobImage({ src, ...props }: any) {
-    const [blobSrc, setBlobSrc] = useState<string | null>(null);
-
-    useEffect(() => {
-        let active = true;
-
-        async function fetchImage() {
-            try {
-                // If src is already a full URL or blob, we might treat it differently,
-                // but here we know it behaves as a redirect to an 'Attachment'
-                const res = await fetch(src);
-                if (!res.ok) throw new Error("Failed to load");
-                const blob = await res.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                if (active) setBlobSrc(objectUrl);
-            } catch (e) {
-                console.error("Image Fetch Error:", e);
-                // Fallback to original src if fetch fails (e.g. CORS), hope for best
-                if (active) setBlobSrc(src);
-            }
-        }
-
-        fetchImage();
-
-        return () => {
-            active = false;
-            // Note: In a real app we should revokeURL on unmount, 
-            // but we need to track if it was created by us. 
-            // For simplicity/stability in this hotfix we rely on GC 
-            // mostly, or we could track previous url.
-        };
-    }, [src]);
-
-    // Cleanup effect
-    useEffect(() => {
-        return () => {
-            if (blobSrc && blobSrc.startsWith('blob:')) {
-                URL.revokeObjectURL(blobSrc);
-            }
-        }
-    }, [blobSrc]);
-
-    if (!blobSrc) {
-        // Show placeholder
-        return <div className={`animate-pulse bg-white/10 ${props.className}`} style={{ width: props.width, height: props.height }} />;
-    }
-
-    return (
-        <Image
-            {...props}
-            src={blobSrc}
-            unoptimized // Vital: render as simple <img> with blob: ID
-        />
-    );
 }

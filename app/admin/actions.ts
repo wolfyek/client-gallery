@@ -20,10 +20,16 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         }
 
         const token = pathParts[tokenIndex + 1];
-        const baseUrl = `${url.protocol}//${url.host}`;
+
+        // Correct Base URL extraction (handling subdirectories)
+        // Everything before /s/{token}
+        const sIndex = shareUrl.indexOf('/s/' + token);
+        const baseUrl = shareUrl.substring(0, sIndex);
+
         const webdavUrl = `${baseUrl}/public.php/webdav`;
 
         console.log("Token:", token);
+        console.log("Base URL:", baseUrl); // Debug log
 
         // 2. Fetch File List via WebDAV (Recursive)
         const response = await fetch(webdavUrl, {
@@ -73,24 +79,16 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
                 // Determine folder (e.g. "Web" or "Full")
                 const parentFolder = pathParts[pathParts.length - 1]; // Last part before filename
 
-                // Construct DIRECT Download URL (Bypass Proxy)
-                // Format: https://{server}/s/{token}/download?path={dir}&files={filename}
-                const dirPath = '/' + pathParts.filter(p => p).join('/'); // Reconstruct directory path cleanly
-
-                // We use the proxyUrl field to store the DIRECT URL now. 
-                // The frontend treats it as a src.
-                // Note: We need to encode params properly.
-                const directUrl = new URL(`${baseUrl}/s/${token}/download`);
-                directUrl.searchParams.set("path", dirPath);
-                directUrl.searchParams.set("files", filename);
-
-                const finalUrl = directUrl.toString();
+                // Construct Proxy URL (which will Redirect)
+                // This allows us to change the destination (Preview vs Download) server-side without re-importing
+                // Also handles the redirect logic centrally.
+                const proxyUrl = `/api/proxy?server=${encodeURIComponent(baseUrl)}&token=${encodeURIComponent(token)}&path=${encodeURIComponent(relativePath)}`;
 
                 foundFiles.push({
                     path: relativePath,
                     filename: filename,
                     folder: parentFolder,
-                    proxyUrl: finalUrl // Storing Direct URL here
+                    proxyUrl: proxyUrl
                 });
             }
         }
