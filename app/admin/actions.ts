@@ -73,18 +73,17 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
                 // Determine folder (e.g. "Web" or "Full")
                 const parentFolder = pathParts[pathParts.length - 1]; // Last part before filename
 
-                // Construct DIRECT Download URL (Bypass Proxy)
-                // Format: https://{server}/s/{token}/download?path={dir}&files={filename}
-                const dirPath = '/' + pathParts.filter(p => p).join('/'); // Reconstruct directory path cleanly
+                // Construct DIRECT Preview URL (Bypass Proxy)
+                // Endpoint: /index.php/apps/files_sharing/ajax/publicpreview.php
+                const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/ajax/publicpreview.php`);
+                previewUrl.searchParams.set("t", token);
+                previewUrl.searchParams.set("file", relativePath.startsWith('/') ? relativePath : `/${relativePath}`);
+                previewUrl.searchParams.set("x", "1920");
+                previewUrl.searchParams.set("y", "1080");
+                previewUrl.searchParams.set("a", "true");
+                previewUrl.searchParams.set("scalingup", "0");
 
-                // We use the proxyUrl field to store the DIRECT URL now. 
-                // The frontend treats it as a src.
-                // Note: We need to encode params properly.
-                const directUrl = new URL(`${baseUrl}/s/${token}/download`);
-                directUrl.searchParams.set("path", dirPath);
-                directUrl.searchParams.set("files", filename);
-
-                const finalUrl = directUrl.toString();
+                const finalUrl = previewUrl.toString();
 
                 foundFiles.push({
                     path: relativePath,
