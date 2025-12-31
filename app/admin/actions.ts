@@ -22,14 +22,13 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         const token = pathParts[tokenIndex + 1];
 
         // Correct Base URL extraction (handling subdirectories)
-        // Everything before /s/{token}
         const sIndex = shareUrl.indexOf('/s/' + token);
-        const baseUrl = shareUrl.substring(0, sIndex);
+        const baseUrl = shareUrl.substring(0, sIndex); // e.g. https://nc.netmedia.si:440
 
         const webdavUrl = `${baseUrl}/public.php/webdav`;
 
         console.log("Token:", token);
-        console.log("Base URL:", baseUrl); // Debug log
+        console.log("Base URL:", baseUrl);
 
         // 2. Fetch File List via WebDAV (Recursive)
         const response = await fetch(webdavUrl, {
@@ -76,19 +75,27 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             const isImage = filename.match(/\.(jpg|jpeg|png|webp|avif)$/i);
 
             if (isImage) {
-                // Determine folder (e.g. "Web" or "Full")
-                const parentFolder = pathParts[pathParts.length - 1]; // Last part before filename
+                const parentFolder = pathParts[pathParts.length - 1];
 
-                // Construct Proxy URL (which will Redirect)
-                // This allows us to change the destination (Preview vs Download) server-side without re-importing
-                // Also handles the redirect logic centrally.
-                const proxyUrl = `/api/proxy?server=${encodeURIComponent(baseUrl)}&token=${encodeURIComponent(token)}&path=${encodeURIComponent(relativePath)}`;
+                // Construct DIRECT Preview URL (Bypass Proxy & Vercel)
+                // Endpoint: /index.php/apps/files_sharing/publicpreview/{token}
+                // Params: file={path}, x=1920, y=1080, a=true
+
+                // Note: path usually comes as /Folder/Image.jpg from WebDAV
+                const contentPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+
+                const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
+                previewUrl.searchParams.set("file", contentPath);
+                previewUrl.searchParams.set("x", "1920");
+                previewUrl.searchParams.set("y", "1080");
+                previewUrl.searchParams.set("a", "true");
+                previewUrl.searchParams.set("scalingup", "0");
 
                 foundFiles.push({
                     path: relativePath,
                     filename: filename,
                     folder: parentFolder,
-                    proxyUrl: proxyUrl
+                    proxyUrl: previewUrl.toString() // DIRECT URL
                 });
             }
         }
