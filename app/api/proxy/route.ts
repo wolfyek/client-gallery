@@ -12,26 +12,26 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Construct Nextcloud Public Preview URL (Modern Format)
-        // Endpoint: /index.php/apps/files_sharing/publicpreview/{token}
-        // Params: file={path}, x={width}, y={height}, a=true
+        // Construct Nextcloud Direct Download URL
+        // Format: https://{server}/s/{token}/download?path={dir}&files={filename}
 
         // Ensure server doesn't have trailing slash
         const baseUrl = server.replace(/\/$/, "");
 
-        // Ensure path has leading slash (Nextcloud usually expects /Folder/File.jpg)
-        const contentPath = path.startsWith('/') ? path : `/${path}`;
+        // Extract directory and filename from path
+        // Path input example: "/Folder/Image.jpg"
+        const lastSlashIndex = path.lastIndexOf('/');
+        const dir = path.substring(0, lastSlashIndex) || "/";
+        const filename = path.substring(lastSlashIndex + 1);
 
-        const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
-        previewUrl.searchParams.set("file", contentPath);
-        previewUrl.searchParams.set("x", "1920");
-        previewUrl.searchParams.set("y", "1080");
-        previewUrl.searchParams.set("a", "true");
-        previewUrl.searchParams.set("scalingup", "0");
+        const directUrl = new URL(`${baseUrl}/s/${token}/download`);
+        directUrl.searchParams.set("path", dir);
+        directUrl.searchParams.set("files", filename);
 
-        return NextResponse.redirect(previewUrl.toString(), 307);
+        return NextResponse.redirect(directUrl.toString(), 307); // Temporary Redirect
     } catch (e) {
         console.error("Redirect Error:", e);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
+```
