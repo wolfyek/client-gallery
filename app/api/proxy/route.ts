@@ -12,20 +12,23 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Construct Nextcloud Public Preview URL
-        // Endpoint: /index.php/apps/files_sharing/ajax/publicpreview.php
-        // Params: t={token}, file={path}, x={width}, y={height}, a=true
+        // Construct Nextcloud Public Preview URL (Modern Format)
+        // Endpoint: /index.php/apps/files_sharing/publicpreview/{token}
+        // Params: file={path}, x={width}, y={height}, a=true
 
         // Ensure server doesn't have trailing slash
         const baseUrl = server.replace(/\/$/, "");
 
-        const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/ajax/publicpreview.php`);
-        previewUrl.searchParams.set("t", token);
-        previewUrl.searchParams.set("file", path); // Path usually needs leading slash, e.g. /Folder/Image.jpg
-        previewUrl.searchParams.set("x", "1920"); // High res for gallery
+        // Clean path: remove leading slash if present to be safe, though Nextcloud usually handles it.
+        // But for 'file' param, relative path 'Folder/Image.jpg' is safer than '/Folder/Image.jpg'
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+        const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
+        previewUrl.searchParams.set("file", cleanPath);
+        previewUrl.searchParams.set("x", "1920");
         previewUrl.searchParams.set("y", "1080");
-        previewUrl.searchParams.set("a", "true"); // Aspect ratio
-        previewUrl.searchParams.set("scalingup", "0"); // Don't upscale
+        previewUrl.searchParams.set("a", "true");
+        previewUrl.searchParams.set("scalingup", "0");
 
         return NextResponse.redirect(previewUrl.toString(), 307);
     } catch (e) {

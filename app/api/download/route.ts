@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(fileUrl, 307);
 
     } catch (error) {
+        // Heuristic: If it looks like a Nextcloud Preview URL, convert it to Download URL?
+        // Preview: .../publicpreview/{token}?file=...
+        // Download: .../s/{token}/download?path={dir}&files={name}
         console.error('Download redirect error:', error);
         return new NextResponse('Download failed', { status: 500 });
     }
