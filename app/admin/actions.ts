@@ -77,25 +77,16 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             if (isImage) {
                 const parentFolder = pathParts[pathParts.length - 1];
 
-                // Construct DIRECT Preview URL (Bypass Proxy & Vercel)
-                // Endpoint: /index.php/apps/files_sharing/publicpreview/{token}
-                // Params: file={path}, x=1920, y=1080, a=true
-
-                // Note: path usually comes as /Folder/Image.jpg from WebDAV
-                const contentPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-
-                const previewUrl = new URL(`${baseUrl}/index.php/apps/files_sharing/publicpreview/${token}`);
-                previewUrl.searchParams.set("file", contentPath);
-                previewUrl.searchParams.set("x", "1920");
-                previewUrl.searchParams.set("y", "1080");
-                previewUrl.searchParams.set("a", "true");
-                previewUrl.searchParams.set("scalingup", "0");
+                // Construct Proxy URL (which will Redirect)
+                // This allows us to change the destination (Preview vs Download) server-side without re-importing
+                // Also handles the redirect logic centrally.
+                const proxyUrl = `/api/proxy?server=${encodeURIComponent(baseUrl)}&token=${encodeURIComponent(token)}&path=${encodeURIComponent(relativePath)}`;
 
                 foundFiles.push({
                     path: relativePath,
                     filename: filename,
                     folder: parentFolder,
-                    proxyUrl: previewUrl.toString() // DIRECT URL
+                    proxyUrl: proxyUrl
                 });
             }
         }
