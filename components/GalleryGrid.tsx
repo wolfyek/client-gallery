@@ -276,6 +276,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 priority={i < 4}
                                 quality={75}
+                                unoptimized
                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             {/* Overlay */}
@@ -400,6 +401,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         className="w-full h-auto rounded-lg shadow-2xl md:shadow-none md:rounded-none md:w-auto md:h-full md:object-contain max-h-[none] md:max-h-[calc(100vh-120px)]"
                                         quality={90}
                                         priority
+                                        unoptimized
                                         onLoadStart={() => {
                                             setIsImageLoading(true);
                                             setLoadingProgress(10);

@@ -12,41 +12,25 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Construct WebDAV URL
-        // We need to encode the path segments correctly
-        // path comes in raw, e.g. "/Folder/My Image.jpg"
-        const encodedPath = path.split('/').map(s => encodeURIComponent(s)).join('/');
+        // Construct Nextcloud Direct Download URL
+        // Format: https://{server}/s/{token}/download?path={dir}&files={filename}
 
-        // Ensure server doesn't have trailing slash if encodedPath has leading slash (it usually does)
+        // Ensure server doesn't have trailing slash
         const baseUrl = server.replace(/\/$/, "");
-        const webdavUrl = `${baseUrl}/public.php/webdav${encodedPath}`;
 
-        // Auth
-        const auth = Buffer.from(`${token}:`).toString('base64');
+        // Extract directory and filename from path
+        // Path input example: "/Folder/Image.jpg"
+        const lastSlashIndex = path.lastIndexOf('/');
+        const dir = path.substring(0, lastSlashIndex) || "/";
+        const filename = path.substring(lastSlashIndex + 1);
 
-        const ncRes = await fetch(webdavUrl, {
-            headers: {
-                'Authorization': `Basic ${auth}`
-            }
-        });
+        const directUrl = new URL(`${baseUrl}/s/${token}/download`);
+        directUrl.searchParams.set("path", dir);
+        directUrl.searchParams.set("files", filename);
 
-        if (!ncRes.ok) {
-            console.error(`Proxy Error: ${ncRes.status} for ${webdavUrl}`);
-            return new NextResponse("Upstream Error", { status: ncRes.status });
-        }
-
-        // Forward headers
-        const headers = new Headers();
-        headers.set("Content-Type", ncRes.headers.get("Content-Type") || "image/jpeg");
-        headers.set("Cache-Control", "public, max-age=31536000, immutable");
-        headers.set("Content-Disposition", "inline"); // Force display
-
-        return new NextResponse(ncRes.body, {
-            status: 200,
-            headers
-        });
+        return NextResponse.redirect(directUrl.toString(), 307); // Temporary Redirect
     } catch (e) {
-        console.error("Proxy Internal Error:", e);
+        console.error("Redirect Error:", e);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
