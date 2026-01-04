@@ -67,6 +67,7 @@ export default function PasswordGate({
                         fill
                         className="object-cover opacity-60"
                         priority
+                        unoptimized
                     />
                     <div className="absolute inset-0 bg-black/20" /> {/* Subtle overlay for text contrast */}
                 </div>

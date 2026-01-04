@@ -136,6 +136,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                                     src={gallery.coverImage}
                                     alt={gallery.title}
                                     fill
+                                    unoptimized
                                     className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
                                 />
 

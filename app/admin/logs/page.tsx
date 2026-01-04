@@ -67,6 +67,7 @@ export default async function LogsPage() {
                                                                 fill
                                                                 className="object-cover"
                                                                 sizes="50px"
+                                                                unoptimized
                                                             />
                                                         )}
                                                     </div>
