@@ -131,26 +131,20 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
             // Extract Parent Directory from Relative Path
             // e.g. /Full/Image.jpg -> /Full
+            // Extract Parent Directory from Relative Path
+            // e.g. /Full/Image.jpg -> /Full
             const lastSlash = relativePathParam.lastIndexOf('/');
             let parentDir = lastSlash > 0 ? relativePathParam.substring(0, lastSlash) : '/';
 
             // INTELLIGENT PATH SWAP:
-            // Goal: Always download the "Full" folder if possible.
-
-            // INTELLIGENT PATH SWAP:
-            // Goal: Always download the "Full" folder if possible.
+            // Goal: Swapping 'Web' to 'Full' to ensure high quality.
+            // But if it is already root '/', assume Flat Gallery and do NOT force '/Full'.
 
             // 1. If currently pointing to Web, switch to Full
             if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
                 parentDir = parentDir.replace(/web/i, 'Full');
             }
-            // 2. If NOT pointing to Full, append Full.
-            // This handles root "/" -> "/Full"
-            else if (!parentDir.match(/\/full$/i) && !parentDir.match(/\/full\//i)) {
-                // Remove trailing slash if exists (except root) then append /Full
-                if (parentDir === '/') parentDir = '/Full';
-                else parentDir = parentDir + '/Full';
-            }
+            // 2. We removed the forced appending of /Full to support flat galleries.
 
             // Normalize slashes
             parentDir = parentDir.replace(/\/\//g, '/');

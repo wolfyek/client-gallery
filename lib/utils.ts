@@ -89,25 +89,27 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // ULTIMATE FIX - FORCE FULL RESOLUTION
-                    // The ZIP logic works because it forces the directory to be "/Full".
-                    // We will do the exact same here. We ignore the source folder (which might be "Web").
-                    // We grab the filename and ask Nextcloud for that file inside "/Full".
+                    // FINAL STRATEGY: PATH ONLY NODE DOWNLOAD
+                    // We request the specific file node using only the 'path' parameter.
+                    // We do basic Web -> Full swapping to ensure high quality, but otherwise trust the path.
 
-                    // 1. Extract Filename
-                    const lastSlash = filePath.lastIndexOf('/');
-                    let filename = filePath;
-                    if (lastSlash >= 0) {
-                        filename = filePath.substring(lastSlash + 1);
+                    let fullPath = filePath;
+
+                    // 1. Swap Web -> Full (Case insensitive)
+                    // Handles /Web/Img.jpg -> /Full/Img.jpg
+                    // Handles /Share/Web/Img.jpg -> /Share/Full/Img.jpg
+                    if (fullPath.match(/\/web\//i) || fullPath.match(/\/web$/i)) {
+                        fullPath = fullPath.replace(/\/web\//i, '/Full/').replace(/\/web$/i, '/Full');
                     }
 
-                    // 2. Force Directory to '/Full'
-                    // This ensures we get the high-res version and avoids 404s from "Web" or root paths.
-                    const directory = '/Full';
+                    // 2. Remove Leading Slash (Nextcloud API preference)
+                    if (fullPath.startsWith('/')) {
+                        fullPath = fullPath.substring(1);
+                    }
 
-                    // 3. Use Official Download Endpoint
-                    // path=/Full, files=Image.jpg
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
+                    // 3. Use Official Download Endpoint with Path Only
+                    // omitting 'files' treats 'path' as the node to download.
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(fullPath)}`;
                 }
             }
         }
