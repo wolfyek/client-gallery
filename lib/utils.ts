@@ -16,8 +16,23 @@ export function formatSlovenianDate(isoDate: string) {
 
 export function downloadImage(url: string, filename: string) {
     // Try to resolve a direct download URL (forcing attachment) if possible
-    const downloadUrl = resolveNextcloudDownloadUrl(url) || url;
-    const proxyUrl = `/api/download?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}`;
+    const downloadUrl = resolveNextcloudDownloadUrl(url);
+
+    if (downloadUrl) {
+        // Direct download for Nextcloud (Bypasses Vercel Proxy / API entirely)
+        // Nextcloud sends 'Content-Disposition: attachment', so this will trigger a download
+        // without navigating away or opening a new tab, assuming the browser respects the header.
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+    }
+
+    // Fallback for non-Nextcloud URLs or if resolution fails
+    const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
 
     // Create invisible link and click it to trigger native browser download
     const link = document.createElement('a');
