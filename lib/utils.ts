@@ -86,10 +86,12 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL ROBUST LOGIC:
-                    // 1. Force targeting "Full" resolution (Swap Web -> Full)
-                    let targetPath = filePath.replace(/\/web\//i, "/Full/")
-                        .replace(/\/web$/i, "/Full");
+                    // FINAL STABLE LOGIC:
+                    // 1. Trust the filePath exactly as provided by the working preview URL.
+                    // Do NOT attempt to swap Web->Full here, as it risks 404s if structure differs.
+                    // The user just wants the file to download instantly.
+
+                    const targetPath = filePath;
 
                     // 2. Split into Directory and Filename for /download endpoint
                     // handling root paths "/" correctly.
@@ -99,11 +101,14 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
 
                     if (lastSlash >= 0) {
                         if (lastSlash === 0) {
-                            directory = '/'; // File is at root: /Image.jpg
+                            // File is at root: /Image.jpg -> dir: /, file: Image.jpg
+                            directory = '/';
+                            filename = targetPath.substring(1);
                         } else {
-                            directory = targetPath.substring(0, lastSlash); // /Folder
+                            // File is in folder: /Folder/Image.jpg
+                            directory = targetPath.substring(0, lastSlash);
+                            filename = targetPath.substring(lastSlash + 1);
                         }
-                        filename = targetPath.substring(lastSlash + 1);
                     } else {
                         // No slashes? Assume root.
                         directory = '/';
@@ -111,7 +116,6 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                     }
 
                     // 3. Construct Official Download URL
-                    // Forces Content-Disposition: attachment
                     return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
