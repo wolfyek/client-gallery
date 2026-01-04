@@ -89,27 +89,43 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL STRATEGY: PATH ONLY NODE DOWNLOAD
-                    // We request the specific file node using only the 'path' parameter.
-                    // We do basic Web -> Full swapping to ensure high quality, but otherwise trust the path.
+                    // PRECISE FILE DOWNLOAD (No ZIP)
+                    // We MUST use the 'files' parameter to tell Nextcloud "Download this specific file",
+                    // otherwise it attempts to ZIP the path.
 
-                    let fullPath = filePath;
+                    const targetPath = filePath;
+                    const lastSlash = targetPath.lastIndexOf('/');
+                    let directory = '';
+                    let filename = targetPath;
 
-                    // 1. Swap Web -> Full (Case insensitive)
-                    // Handles /Web/Img.jpg -> /Full/Img.jpg
-                    // Handles /Share/Web/Img.jpg -> /Share/Full/Img.jpg
-                    if (fullPath.match(/\/web\//i) || fullPath.match(/\/web$/i)) {
-                        fullPath = fullPath.replace(/\/web\//i, '/Full/').replace(/\/web$/i, '/Full');
+                    if (lastSlash >= 0) {
+                        if (lastSlash === 0) {
+                            // File at root: /Image.jpg
+                            directory = '';
+                            filename = targetPath.substring(1);
+                        } else {
+                            // File in folder: /Web/Image.jpg -> directory: /Web
+                            directory = targetPath.substring(0, lastSlash);
+                            filename = targetPath.substring(lastSlash + 1);
+                        }
+                    } else {
+                        directory = '';
+                        filename = targetPath;
                     }
 
-                    // 2. Remove Leading Slash (Nextcloud API preference)
-                    if (fullPath.startsWith('/')) {
-                        fullPath = fullPath.substring(1);
+                    // Intelligent Swap: If directory is 'Web', make it 'Full' to get high res.
+                    // But do NOT force 'Full' if it's just root, to support Flat Galleries.
+                    if (directory.match(/\/web$/i) || directory.match(/\/web\//i) || directory === '/Web' || directory === 'Web') {
+                        directory = directory.replace(/web/i, 'Full');
                     }
 
-                    // 3. Use Official Download Endpoint with Path Only
-                    // omitting 'files' treats 'path' as the node to download.
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(fullPath)}`;
+                    // Clean Directory: Remove leading slash if present (API preference)
+                    if (directory.startsWith('/')) {
+                        directory = directory.substring(1);
+                    }
+
+                    // Use Official Download Endpoint with 'files' param
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
         }
