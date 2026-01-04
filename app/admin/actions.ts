@@ -47,6 +47,10 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         const sIndex = shareUrl.indexOf('/s/' + token);
         if (sIndex !== -1) {
             baseUrl = shareUrl.substring(0, sIndex);
+            // Fix: Remove trailing /index.php if present (e.g. https://domain.com/index.php/s/...)
+            if (baseUrl.endsWith("/index.php")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length - "/index.php".length);
+            }
         } else {
             // Handle DAV URL: .../public.php/dav/files/[token]
             // Base URL is typically before /public.php
