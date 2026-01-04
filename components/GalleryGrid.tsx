@@ -123,7 +123,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             if (!fileParam) throw new Error("Could not extract file path");
 
             const lastSlash = fileParam.lastIndexOf('/');
-            const parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
+            let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
+
+            // INTELLIGENT PATH SWAP:
+            // If the viewer is looking at "Web" images, but we want to download "Full" images.
+            // Or if we are at Root and "Full" likely exists.
+            if (parentDir.includes('/Web') || parentDir.includes('/web')) {
+                parentDir = parentDir.replace(/\/web/i, '/Full'); // Swap Web -> Full
+            } else if (parentDir === '/') {
+                // If root, try to append Full, assuming standard structure
+                // We can't know for sure, but user complained about getting "Both", so targeting Full is safer.
+                parentDir = '/Full';
+            }
 
             // Construct Direct ZIP URL
             // https://[server]/index.php/s/[token]/download?path=[parentDir]

@@ -90,15 +90,12 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // The 'path' param in /download expects a DIRECTORY.
-                    // The 'files' param expects the FILENAME.
-                    // Providing full path to 'path' caused ZIP fallbacks or 404s.
+                    // We use the Public Preview endpoint with &download=1. 
+                    // This is the most reliable way to get a single file "Force Download" 
+                    // without dealing with WebDAV directory strictness.
+                    // It preserves the filename from the 'file' param.
 
-                    const lastSlash = filePath.lastIndexOf('/');
-                    const directory = lastSlash > 0 ? filePath.substring(0, lastSlash) : '/';
-                    const filename = lastSlash >= 0 ? filePath.substring(lastSlash + 1) : filePath;
-
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
+                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&a=true&download=1`;
                 }
             }
         }
