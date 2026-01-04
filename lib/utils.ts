@@ -89,39 +89,37 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL SYNCED LOGIC (Matches Working ZIP Logic):
-                    // 1. Strip the "Share Root" from the path so it is relative to the share.
-                    // The ZIP function does this and works, so we MUST do it here too.
-                    // Usage: /index.php/s/[token]/download expects path relative to share.
+                    // FINAL CORRECTED LOGIC:
+                    // 1. Trust source path (Do NOT strip first segment, as /Full/Image.jpg IS the correct relative path).
+                    const targetPath = filePath;
 
-                    const parts = filePath.split('/').filter(p => p.length > 0);
-                    let relativePath = filePath;
-
-                    // If we have at least 2 parts (ShareName + File), strip the first.
-                    // e.g. /Gallery/Image.jpg -> /Image.jpg
-                    if (parts.length >= 2) {
-                        relativePath = '/' + parts.slice(1).join('/');
-                    }
-
-                    // 2. Split into Directory and Filename for /download endpoint
-                    const lastSlash = relativePath.lastIndexOf('/');
-                    let directory = ''; // Default to empty string for root (safer than /)
-                    let filename = relativePath;
+                    // 2. Split directory/filename
+                    const lastSlash = targetPath.lastIndexOf('/');
+                    let directory = '';
+                    let filename = targetPath;
 
                     if (lastSlash >= 0) {
                         if (lastSlash === 0) {
-                            directory = ''; // Root
-                            filename = relativePath.substring(1);
+                            // File at root: /Image.jpg
+                            directory = '';
+                            filename = targetPath.substring(1);
                         } else {
-                            directory = relativePath.substring(0, lastSlash);
-                            filename = relativePath.substring(lastSlash + 1);
+                            // File in folder: /Full/Image.jpg -> directory: /Full
+                            directory = targetPath.substring(0, lastSlash);
+                            filename = targetPath.substring(lastSlash + 1);
                         }
                     } else {
                         directory = '';
-                        filename = relativePath;
+                        filename = targetPath;
                     }
 
-                    // 3. Use Official Download Endpoint
+                    // 3. Remove leading slash from directory if present
+                    // Nextcloud /download endpoint often prefers "Full" over "/Full"
+                    if (directory.startsWith('/')) {
+                        directory = directory.substring(1);
+                    }
+
+                    // 4. Use Official Download Endpoint
                     return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
