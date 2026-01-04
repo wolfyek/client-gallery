@@ -14,22 +14,26 @@ export function formatSlovenianDate(isoDate: string) {
     });
 }
 
-export function downloadImage(url: string, filename: string) {
+import { saveAs } from "file-saver";
+
+export async function downloadImage(url: string, filename: string) {
     // Try to resolve a direct download URL (forcing attachment) if possible
     const downloadUrl = resolveNextcloudDownloadUrl(url);
 
     if (downloadUrl) {
-        // Direct download for Nextcloud (Bypasses Vercel Proxy / API entirely)
-        // Nextcloud sends 'Content-Disposition: attachment', so this will trigger a download
-        // without navigating away or opening a new tab, assuming the browser respects the header.
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
+        try {
+            // Client-side fetch to bypass browser navigation issues and Vercel limits
+            const response = await fetch(downloadUrl);
+            if (!response.ok) throw new Error("Network response was not ok");
+            const blob = await response.blob();
+            saveAs(blob, filename);
+            return;
+        } catch (e) {
+            console.error("Direct download failed, trying fallback...", e);
+        }
     }
+
+
 
     // Fallback for non-Nextcloud URLs or if resolution fails
     const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;

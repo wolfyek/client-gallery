@@ -13,17 +13,51 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         // 1. Extract Token and Base URL
         const url = new URL(shareUrl);
         const pathParts = url.pathname.split('/');
-        const tokenIndex = pathParts.indexOf('s');
 
-        if (tokenIndex === -1 || tokenIndex + 1 >= pathParts.length) {
-            throw new Error("Invalid Nextcloud Share URL. Must contain /s/[token]");
+        // Try to find token in standard share URL /s/[token]
+        let tokenIndex = pathParts.indexOf('s');
+
+        // If not found, try to find in WebDAV URL /public.php/dav/files/[token]
+        if (tokenIndex === -1) {
+            const davIndex = pathParts.indexOf('dav');
+            if (davIndex !== -1 && pathParts[davIndex + 1] === 'files') {
+                tokenIndex = davIndex + 1; // "files" is at index+1, token is at index+2
+            }
         }
 
-        const token = pathParts[tokenIndex + 1];
+        // Logic adjustment: `tokenIndex` should point to the segment BEFORE the token
+        // In /s/[token], 's' is at i, token is at i+1.
+        // In .../files/[token], 'files' is at i, token is at i+1.
+
+        // Refined:
+        let token = "";
+
+        if (pathParts.includes('s')) {
+            token = pathParts[pathParts.indexOf('s') + 1];
+        } else if (pathParts.includes('files') && pathParts.includes('dav')) {
+            token = pathParts[pathParts.indexOf('files') + 1];
+        }
+
+        if (!token) {
+            throw new Error("Invalid Nextcloud Share URL. Must contain /s/[token] or be a WebDAV URL.");
+        }
 
         // Correct Base URL extraction (handling subdirectories)
+        let baseUrl = "";
         const sIndex = shareUrl.indexOf('/s/' + token);
-        const baseUrl = shareUrl.substring(0, sIndex); // e.g. https://nc.netmedia.si:440
+        if (sIndex !== -1) {
+            baseUrl = shareUrl.substring(0, sIndex);
+        } else {
+            // Handle DAV URL: .../public.php/dav/files/[token]
+            // Base URL is typically before /public.php
+            const publicIndex = shareUrl.indexOf('/public.php');
+            if (publicIndex !== -1) {
+                baseUrl = shareUrl.substring(0, publicIndex);
+            } else {
+                // Fallback: try to guess from origin?
+                baseUrl = url.origin;
+            }
+        }
 
         const webdavUrl = `${baseUrl}/public.php/webdav`;
 
