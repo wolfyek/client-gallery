@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { type Photo } from "@/lib/data";
 import Image from "next/image";
 import { Download, X, ChevronLeft, ChevronRight, Archive, Check } from "lucide-react";
-import { downloadImage } from "@/lib/utils";
+import { downloadImage, resolveNextcloudUrl } from "@/lib/utils";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { recordDownload } from "@/app/actions/logging";
@@ -115,7 +115,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 const chunk = photos.slice(i, i + chunkSize);
                 await Promise.all(chunk.map(async (photo) => {
                     const filename = photo.alt || `photo-${photo.id}.jpg`;
-                    const response = await fetch(`/api/download?url=${encodeURIComponent(photo.src)}&filename=${encodeURIComponent(filename)}`);
+                    const directUrl = resolveNextcloudUrl(photo.src);
+                    // Use the proxy download endpoint primarily because it handles CORS better for JSZip?
+                    // actually, if we use direct URL, we might hit CORS issues in browser. 
+                    // BUT user wants to bypass proxy. 
+                    // Let's rely on the proxy endpoint to REDIRECT (307) to the direct URL.
+                    // The browser's fetch might follow the redirect.
+                    // However, if we fetch directly from Nextcloud, we need CORS.
+
+                    // Let's stick to the current plan: The proxy endpoint (api/download) already does a 307 redirect.
+                    // But if we want to bypass Vercel COMPLETELY for bytes, the client should fetch the direct URL if possible.
+
+                    const response = await fetch(directUrl); // DIRECT FETCH
                     const blob = await response.blob();
                     folder.file(filename, blob);
 
@@ -143,8 +154,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     const performSingleDownload = async (currentEmail: string) => {
         if (selectedPhoto) {
             const filename = selectedPhoto.alt || `photo-${selectedPhoto.id}.jpg`;
+            const directUrl = resolveNextcloudUrl(selectedPhoto.src);
             await recordDownload(currentEmail, galleryTitle, selectedPhoto.id, selectedPhoto.src, filename);
-            downloadImage(selectedPhoto.src, filename);
+            downloadImage(directUrl, filename);
         }
     };
 
@@ -270,7 +282,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                             className="relative aspect-[16/10] w-full overflow-hidden"
                         >
                             <Image
-                                src={photo.previewSrc || photo.src}
+                                src={resolveNextcloudUrl(photo.previewSrc || photo.src)}
                                 alt={photo.alt}
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -393,7 +405,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     )}
 
                                     <Image
-                                        src={selectedPhoto.previewSrc || selectedPhoto.src}
+                                        src={resolveNextcloudUrl(selectedPhoto.previewSrc || selectedPhoto.src)}
                                         alt={selectedPhoto.alt}
                                         width={selectedPhoto.width} // Provide intrinsic width
                                         height={selectedPhoto.height} // Provide intrinsic height
@@ -485,10 +497,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             {selectedPhoto && (
                 <div className="hidden">
                     {nextPhoto && (
-                        <Image src={nextPhoto.previewSrc || nextPhoto.src} alt="preload-next" width={1} height={1} priority quality={50} unoptimized />
+                        <Image src={resolveNextcloudUrl(nextPhoto.previewSrc || nextPhoto.src)} alt="preload-next" width={1} height={1} priority quality={50} unoptimized />
                     )}
                     {prevPhoto && (
-                        <Image src={prevPhoto.previewSrc || prevPhoto.src} alt="preload-prev" width={1} height={1} priority quality={50} unoptimized />
+                        <Image src={resolveNextcloudUrl(prevPhoto.previewSrc || prevPhoto.src)} alt="preload-prev" width={1} height={1} priority quality={50} unoptimized />
                     )}
                 </div>
             )}

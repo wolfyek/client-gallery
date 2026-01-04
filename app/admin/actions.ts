@@ -77,16 +77,22 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             if (isImage) {
                 const parentFolder = pathParts[pathParts.length - 1];
 
-                // Construct Proxy URL (which will Redirect)
-                // This allows us to change the destination (Preview vs Download) server-side without re-importing
-                // Also handles the redirect logic centrally.
-                const proxyUrl = `/api/proxy?server=${encodeURIComponent(baseUrl)}&token=${encodeURIComponent(token)}&path=${encodeURIComponent(relativePath)}`;
+                // Direct Nextcloud URL Construction
+                // We want to store the Direct URL in the database to completely bypass Vercel functions
+                const cleanServer = baseUrl.replace(/\/$/, "");
+                const cleanPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+
+                // Format: https://[server]/index.php/apps/files_sharing/publicpreview/[token]?file=[path]&x=1920&y=1080&a=true&scalingup=0
+                const directUrl = `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&x=1920&y=1080&a=true&scalingup=0`;
+
+                // We still use "proxyUrl" as the property name in this temp object to match the rest of the function logic,
+                // but the value is now the direct URL.
 
                 foundFiles.push({
                     path: relativePath,
                     filename: filename,
                     folder: parentFolder,
-                    proxyUrl: proxyUrl
+                    proxyUrl: directUrl
                 });
             }
         }
