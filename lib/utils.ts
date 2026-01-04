@@ -81,7 +81,7 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
         }
 
         // Case 2: Standard Public Preview URL
-        // .../publicpreview/TOKEN?file=/Path...
+        // .../publicpreview/TOKEN?file=/GalleryName/Image.jpg...
         if (url.includes("/publicpreview/")) {
             const urlObj = new URL(url);
             const match = url.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
@@ -89,9 +89,20 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const token = match[1];
                 const file = urlObj.searchParams.get("file");
                 if (file) {
-                    // Construct official Download URL
-                    // https://[server]/index.php/s/[token]/download?path=[file]
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(file)}`;
+                    // Nextcloud "file" param usually includes the Share Folder Name (e.g. /Gallery/Image.jpg)
+                    // But the "path" param for /download expects path relative to Share Root (e.g. /Image.jpg)
+                    // We must strip the first segment.
+
+                    const parts = file.split('/').filter(p => p.length > 0);
+                    let relativePath = file;
+
+                    if (parts.length >= 2) {
+                        // e.g. /Gallery/Image.jpg -> /Image.jpg
+                        relativePath = '/' + parts.slice(1).join('/');
+                    }
+                    // If parts.length is 1, it might be at root, keep as is.
+
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(relativePath)}`;
                 }
             }
         }
