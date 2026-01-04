@@ -86,14 +86,33 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL FIX:
-                    // We abandon the /download endpoint which is too fragile with path segments.
-                    // We revert to the publicpreview endpoint which we KNOW works (images load).
-                    // Appending &download=1 forces Content-Disposition: attachment.
-                    // We trust thefilePath exactly as it is (including Share Root if present),
-                    // because that is what Nextcloud generated for the working preview.
+                    // FINAL ROBUST LOGIC:
+                    // 1. Force targeting "Full" resolution (Swap Web -> Full)
+                    let targetPath = filePath.replace(/\/web\//i, "/Full/")
+                        .replace(/\/web$/i, "/Full");
 
-                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&a=true&download=1`;
+                    // 2. Split into Directory and Filename for /download endpoint
+                    // handling root paths "/" correctly.
+                    const lastSlash = targetPath.lastIndexOf('/');
+                    let directory = '/';
+                    let filename = targetPath;
+
+                    if (lastSlash >= 0) {
+                        if (lastSlash === 0) {
+                            directory = '/'; // File is at root: /Image.jpg
+                        } else {
+                            directory = targetPath.substring(0, lastSlash); // /Folder
+                        }
+                        filename = targetPath.substring(lastSlash + 1);
+                    } else {
+                        // No slashes? Assume root.
+                        directory = '/';
+                        filename = targetPath;
+                    }
+
+                    // 3. Construct Official Download URL
+                    // Forces Content-Disposition: attachment
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
         }
