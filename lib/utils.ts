@@ -89,43 +89,13 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // PRECISE FILE DOWNLOAD (No ZIP)
-                    // We MUST use the 'files' parameter to tell Nextcloud "Download this specific file",
-                    // otherwise it attempts to ZIP the path.
+                    // FINAL ATTEMPT - PUBLIC PREVIEW DOWNLOAD STRATEGY
+                    // The '/download' endpoint is aggressively Zipping files (redirecting to ?accept=zip).
+                    // We fall back to the 'publicpreview' endpoint which defines the image source.
+                    // By removing dimensions and adding 'download=1', we force Nextcloud to serve the raw file
+                    // with Content-Disposition: attachment.
 
-                    const targetPath = filePath;
-                    const lastSlash = targetPath.lastIndexOf('/');
-                    let directory = '';
-                    let filename = targetPath;
-
-                    if (lastSlash >= 0) {
-                        if (lastSlash === 0) {
-                            // File at root: /Image.jpg
-                            directory = '';
-                            filename = targetPath.substring(1);
-                        } else {
-                            // File in folder: /Web/Image.jpg -> directory: /Web
-                            directory = targetPath.substring(0, lastSlash);
-                            filename = targetPath.substring(lastSlash + 1);
-                        }
-                    } else {
-                        directory = '';
-                        filename = targetPath;
-                    }
-
-                    // Intelligent Swap: If directory is 'Web', make it 'Full' to get high res.
-                    // But do NOT force 'Full' if it's just root, to support Flat Galleries.
-                    if (directory.match(/\/web$/i) || directory.match(/\/web\//i) || directory === '/Web' || directory === 'Web') {
-                        directory = directory.replace(/web/i, 'Full');
-                    }
-
-                    // Clean Directory: Remove leading slash if present (API preference)
-                    if (directory.startsWith('/')) {
-                        directory = directory.substring(1);
-                    }
-
-                    // Use Official Download Endpoint with 'files' param
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
+                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&a=true&download=1`;
                 }
             }
         }
