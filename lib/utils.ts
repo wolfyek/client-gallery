@@ -17,31 +17,17 @@ export function formatSlovenianDate(isoDate: string) {
 import { saveAs } from "file-saver";
 
 export async function downloadImage(url: string, filename: string) {
-    // Try to resolve a direct download URL (forcing attachment) if possible
+    // Resolve to the Direct Nextcloud Download URL
     const downloadUrl = resolveNextcloudDownloadUrl(url);
 
-    if (downloadUrl) {
-        try {
-            // Client-side fetch to bypass browser navigation issues and Vercel limits
-            const response = await fetch(downloadUrl);
-            if (!response.ok) throw new Error("Network response was not ok");
-            const blob = await response.blob();
-            saveAs(blob, filename);
-            return;
-        } catch (e) {
-            console.error("Direct download failed, trying fallback...", e);
-        }
-    }
-
-
-
-    // Fallback for non-Nextcloud URLs or if resolution fails
-    const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+    // Use resolved URL or fallback to the provided URL (via redirector if needed, though redirector just uses the same logic)
+    const targetUrl = downloadUrl || url;
 
     // Create invisible link and click it to trigger native browser download
     const link = document.createElement('a');
-    link.href = proxyUrl;
-    link.download = filename; // Backup hint
+    link.href = targetUrl;
+    link.download = filename;
+    link.target = "_self"; // Force same tab to trigger download handling
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -80,9 +66,9 @@ export function resolveNextcloudUrl(url: string | undefined): string {
 export function resolveNextcloudDownloadUrl(url: string | undefined): string | null {
     if (!url) return null;
 
-    // Case 1: Legacy Proxy URL
-    if (url.startsWith("/api/proxy")) {
-        try {
+    try {
+        // Case 1: Legacy Proxy URL (Handle gracefully just in case)
+        if (url.startsWith("/api/proxy")) {
             const urlObj = new URL(url, "http://dummy.com");
             const server = urlObj.searchParams.get("server");
             const token = urlObj.searchParams.get("token");
@@ -90,22 +76,28 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
 
             if (server && token && path) {
                 const cleanServer = server.replace(/\/$/, "");
-                const cleanPath = path.startsWith('/') ? path : `/${path}`;
-
-                // Use Public Preview with download=1 as it returns the binary reliably (200 OK), 
-                // whereas /s/token/download often redirects to a broken WebDAV ZIP URL.
-                return `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&a=true&download=1`;
+                return `${cleanServer}/index.php/s/${token}/download?path=${encodeURIComponent(path)}`;
             }
-        } catch (e) {
-            console.error("Failed to resolve Nextcloud Proxy Download URL", e);
         }
-    }
 
-    // Case 2: Already a Nextcloud Preview URL
-    // Legacy note: We used to try adding &download=1 here, but that only yields a thumbnail.
-    // We now return null to force the usage of /api/download (WebDAV Proxy) which gets the full file.
-    if (url.includes("/publicpreview/")) {
-        return null;
+        // Case 2: Standard Public Preview URL
+        // .../publicpreview/TOKEN?file=/Path...
+        if (url.includes("/publicpreview/")) {
+            const urlObj = new URL(url);
+            const match = url.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
+            if (match) {
+                const token = match[1];
+                const file = urlObj.searchParams.get("file");
+                if (file) {
+                    // Construct official Download URL
+                    // https://[server]/index.php/s/[token]/download?path=[file]
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(file)}`;
+                }
+            }
+        }
+
+    } catch (e) {
+        console.error("Failed to resolve Nextcloud Download URL", e);
     }
 
     return null;
