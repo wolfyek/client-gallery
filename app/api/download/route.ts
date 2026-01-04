@@ -33,28 +33,55 @@ export async function GET(request: NextRequest) {
         }
 
         if (token && path && baseUrl) {
-            const webdavUrl = `${baseUrl}/public.php/webdav${path}`;
+            const kind = searchParams.get('kind');
 
-            console.log(`Proxying Download via WebDAV: ${webdavUrl}`);
+            let targetUrl = "";
+            let headers: HeadersInit = {
+                'Authorization': 'Basic ' + Buffer.from(token + ':').toString('base64')
+            };
 
-            const response = await fetch(webdavUrl, {
-                headers: {
-                    'Authorization': 'Basic ' + Buffer.from(token + ':').toString('base64')
-                }
-            });
+            if (kind === 'zip') {
+                // Calculate parent directory of the file
+                // e.g. /Full/Image.jpg -> /Full
+                // e.g. /Image.jpg -> /
+                const lastSlash = path.lastIndexOf('/');
+                const dir = lastSlash > 0 ? path.substring(0, lastSlash) : '/';
+
+                // Construct Nextcloud native ZIP download URL
+                // /index.php/s/[token]/download?path=[dir]
+                targetUrl = `${baseUrl}/index.php/s/${token}/download?path=${encodeURIComponent(dir)}`;
+                console.log(`Proxying ZIP Download: ${targetUrl}`);
+
+                // Note: The download endpoint might redirect. We rely on fetch following it.
+            } else {
+                // Single file WebDAV
+                targetUrl = `${baseUrl}/public.php/webdav${path}`;
+                console.log(`Proxying File via WebDAV: ${targetUrl}`);
+            }
+
+            const response = await fetch(targetUrl, { headers });
 
             if (!response.ok) {
-                throw new Error(`WebDAV Error: ${response.status}`);
+                throw new Error(`Upstream Error: ${response.status}`);
             }
 
             // Create a new response streaming the body
-            const headers = new Headers(response.headers);
-            // Ensure force download
-            headers.set('Content-Disposition', `attachment; filename="${path.split('/').pop()}"`);
+            const responseHeaders = new Headers(response.headers);
+
+            // Ensure reasonable content disposition
+            if (kind === 'zip') {
+                // Nextcloud usually provides a good filename (e.g. "download.zip" or "Folder.zip")
+                // We preserve it if present, otherwise set default
+                if (!responseHeaders.has('content-disposition')) {
+                    responseHeaders.set('content-disposition', `attachment; filename="gallery.zip"`);
+                }
+            } else {
+                responseHeaders.set('content-disposition', `attachment; filename="${path.split('/').pop()}"`);
+            }
 
             return new NextResponse(response.body, {
                 status: 200,
-                headers: headers
+                headers: responseHeaders
             });
         }
 

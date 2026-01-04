@@ -97,47 +97,42 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     };
 
     const performDownloadAll = async (currentEmail: string) => {
-        setIsZipping(true);
-        setZipProgress(0);
+        if (photos.length === 0) return;
 
-        // Log the bulk download (using first image as representative)
-        if (photos.length > 0) {
-            await recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE", photos[0].src, `${galleryTitle}.zip`);
-        }
+        setIsZipping(true);
+        setZipProgress(50); // Fake progress since it's server side now
 
         try {
-            const zip = new JSZip();
-            const folder = zip.folder(galleryTitle) || zip;
+            // Log the bulk download
+            await recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE", photos[0].src, `${galleryTitle}.zip`);
 
-            let completed = 0;
-            const chunkSize = 3;
-            for (let i = 0; i < photos.length; i += chunkSize) {
-                const chunk = photos.slice(i, i + chunkSize);
-                await Promise.all(chunk.map(async (photo) => {
-                    const filename = photo.alt || `photo-${photo.id}.jpg`;
-                    // Use the proxy download endpoint to bypass CORS blocking on Nextcloud
-                    // and to ensure we get the full resolution file via WebDAV.
-                    const proxyUrl = `/api/download?url=${encodeURIComponent(photo.src)}&filename=${encodeURIComponent(filename)}`;
+            // Use the first photo to extract the Share Token and Folder Path
+            const sampleUrl = resolveNextcloudUrl(photos[0].src);
 
-                    const response = await fetch(proxyUrl); // PROXY FETCH
-                    if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
-                    const blob = await response.blob();
-                    folder.file(filename, blob);
+            // Construct the Proxy ZIP URL
+            // This endpoint will calculate the parent folder and ask Nextcloud to ZIP it.
+            const proxyZipUrl = `/api/download?kind=zip&url=${encodeURIComponent(sampleUrl)}`;
 
-                    completed++;
-                    setZipProgress(Math.round((completed / photos.length) * 100));
-                }));
-            }
+            // Trigger download via invisible iframe or link
+            const link = document.createElement('a');
+            link.href = proxyZipUrl;
+            link.download = `${galleryTitle}.zip`; // Hint
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-            const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, `${galleryTitle}.zip`);
+            setZipProgress(100);
+
+            // Wait a bit to show 100% then reset
+            setTimeout(() => {
+                setIsZipping(false);
+                setZipProgress(0);
+            }, 2000);
 
         } catch (error) {
             console.error("ZIP Generation failed:", error);
-            alert("Napaka pri ustvarjanju ZIP datoteke.");
-        } finally {
+            alert("Napaka pri prenosu ZIP datoteke.");
             setIsZipping(false);
-            setZipProgress(0);
         }
     };
 
