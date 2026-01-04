@@ -115,18 +115,12 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 const chunk = photos.slice(i, i + chunkSize);
                 await Promise.all(chunk.map(async (photo) => {
                     const filename = photo.alt || `photo-${photo.id}.jpg`;
-                    const directUrl = resolveNextcloudUrl(photo.src);
-                    // Use the proxy download endpoint primarily because it handles CORS better for JSZip?
-                    // actually, if we use direct URL, we might hit CORS issues in browser. 
-                    // BUT user wants to bypass proxy. 
-                    // Let's rely on the proxy endpoint to REDIRECT (307) to the direct URL.
-                    // The browser's fetch might follow the redirect.
-                    // However, if we fetch directly from Nextcloud, we need CORS.
+                    // Use the proxy download endpoint to bypass CORS blocking on Nextcloud
+                    // and to ensure we get the full resolution file via WebDAV.
+                    const proxyUrl = `/api/download?url=${encodeURIComponent(photo.src)}&filename=${encodeURIComponent(filename)}`;
 
-                    // Let's stick to the current plan: The proxy endpoint (api/download) already does a 307 redirect.
-                    // But if we want to bypass Vercel COMPLETELY for bytes, the client should fetch the direct URL if possible.
-
-                    const response = await fetch(directUrl); // DIRECT FETCH
+                    const response = await fetch(proxyUrl); // PROXY FETCH
+                    if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
                     const blob = await response.blob();
                     folder.file(filename, blob);
 
