@@ -86,22 +86,11 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // 1. Force "Full" resolution if we are in "Web" or root
-                    // The user explicitly wants "Originals" (Full), not Web Optimized.
-                    let targetPath = filePath;
-                    if (targetPath.includes("/Web/") || targetPath.includes("/web/")) {
-                        targetPath = targetPath.replace(/\/web\//i, "/Full/");
-                    } else if (!targetPath.includes("/Full/")) {
-                        // If it doesn't look like it's in Full or Web, it might be at root.
-                        // Try to force it into /Full/Filename if that's the known structure
-                        // But let's be careful. Swapping Web->Full is explicitly requested.
-                    }
-
                     // 2. Split into Directory and Filename for the official Download Endpoint
                     // API: /index.php/s/[token]/download?path=[dir]&files=[name]
-                    const lastSlash = targetPath.lastIndexOf('/');
-                    const directory = lastSlash > 0 ? targetPath.substring(0, lastSlash) : '/';
-                    const filename = lastSlash >= 0 ? targetPath.substring(lastSlash + 1) : targetPath;
+                    const lastSlash = filePath.lastIndexOf('/');
+                    const directory = lastSlash > 0 ? filePath.substring(0, lastSlash) : '/';
+                    const filename = lastSlash >= 0 ? filePath.substring(lastSlash + 1) : filePath;
 
                     return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }

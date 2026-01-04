@@ -127,15 +127,22 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
             // INTELLIGENT PATH SWAP:
             // Goal: Always download the "Full" folder if possible.
-            // If current path includes /Web/, switch to /Full.
-            // If current path is Root /, assume /Full exists and target it.
 
-            if (parentDir.match(/\/web/i)) {
-                parentDir = parentDir.replace(/\/web/i, '/Full');
-            } else if (parentDir === '/' || parentDir === '') {
-                parentDir = '/Full';
+            // 1. If currently pointing to Web, switch to Full
+            if (parentDir.match(/\/web$/i)) {
+                parentDir = parentDir.replace(/\/web$/i, '/Full');
             }
-            // If it's already /Full, we leave it.
+            // 2. If NOT pointing to Full, append Full.
+            // This handles root "/" -> "/Full"
+            // And "/Gallery" -> "/Gallery/Full"
+            else if (!parentDir.match(/\/full$/i)) {
+                // Remove trailing slash if exists (except root) then append /Full
+                if (parentDir === '/') parentDir = '/Full';
+                else parentDir = parentDir + '/Full';
+            }
+
+            // Remove any double slashes just in case
+            parentDir = parentDir.replace(/\/\//g, '/');
 
             // Construct Direct ZIP URL
             // https://[server]/index.php/s/[token]/download?path=[parentDir]
