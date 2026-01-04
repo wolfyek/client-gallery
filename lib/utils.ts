@@ -23,14 +23,10 @@ export async function downloadImage(url: string, filename: string) {
     // Use resolved URL or fallback to the provided URL (via redirector if needed, though redirector just uses the same logic)
     const targetUrl = downloadUrl || url;
 
-    // Create invisible link and click it to trigger native browser download
-    const link = document.createElement('a');
-    link.href = targetUrl;
-    link.download = filename;
-    link.target = "_self"; // Force same tab to trigger download handling
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Trigger Native Browser Download via Navigation
+    // This is the most reliable way for Cross-Origin downloads (Nextcloud) where 'download' attribute is ignored.
+    // If the server sends Content-Disposition: attachment, the browser will stay on page and download.
+    window.location.href = targetUrl;
 }
 
 export function resolveNextcloudUrl(url: string | undefined): string {
@@ -90,12 +86,24 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // We use the Public Preview endpoint with &download=1. 
-                    // This is the most reliable way to get a single file "Force Download" 
-                    // without dealing with WebDAV directory strictness.
-                    // It preserves the filename from the 'file' param.
+                    // 1. Force "Full" resolution if we are in "Web" or root
+                    // The user explicitly wants "Originals" (Full), not Web Optimized.
+                    let targetPath = filePath;
+                    if (targetPath.includes("/Web/") || targetPath.includes("/web/")) {
+                        targetPath = targetPath.replace(/\/web\//i, "/Full/");
+                    } else if (!targetPath.includes("/Full/")) {
+                        // If it doesn't look like it's in Full or Web, it might be at root.
+                        // Try to force it into /Full/Filename if that's the known structure
+                        // But let's be careful. Swapping Web->Full is explicitly requested.
+                    }
 
-                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&a=true&download=1`;
+                    // 2. Split into Directory and Filename for the official Download Endpoint
+                    // API: /index.php/s/[token]/download?path=[dir]&files=[name]
+                    const lastSlash = targetPath.lastIndexOf('/');
+                    const directory = lastSlash > 0 ? targetPath.substring(0, lastSlash) : '/';
+                    const filename = lastSlash >= 0 ? targetPath.substring(lastSlash + 1) : targetPath;
+
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
         }

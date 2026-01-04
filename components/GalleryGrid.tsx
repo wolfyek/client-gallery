@@ -126,15 +126,16 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
 
             // INTELLIGENT PATH SWAP:
-            // If the viewer is looking at "Web" images, but we want to download "Full" images.
-            // Or if we are at Root and "Full" likely exists.
-            if (parentDir.includes('/Web') || parentDir.includes('/web')) {
-                parentDir = parentDir.replace(/\/web/i, '/Full'); // Swap Web -> Full
-            } else if (parentDir === '/') {
-                // If root, try to append Full, assuming standard structure
-                // We can't know for sure, but user complained about getting "Both", so targeting Full is safer.
+            // Goal: Always download the "Full" folder if possible.
+            // If current path includes /Web/, switch to /Full.
+            // If current path is Root /, assume /Full exists and target it.
+
+            if (parentDir.match(/\/web/i)) {
+                parentDir = parentDir.replace(/\/web/i, '/Full');
+            } else if (parentDir === '/' || parentDir === '') {
                 parentDir = '/Full';
             }
+            // If it's already /Full, we leave it.
 
             // Construct Direct ZIP URL
             // https://[server]/index.php/s/[token]/download?path=[parentDir]
