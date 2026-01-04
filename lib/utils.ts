@@ -86,28 +86,14 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // 1. Strip the "Share Root" from the path
-                    // usage: /index.php/s/[token]/download expects path relative to share.
-                    // publicpreview file param: /ShareName/SubFolder/Image.jpg
-                    // Expected relative path: /SubFolder/Image.jpg
+                    // FINAL FIX:
+                    // We abandon the /download endpoint which is too fragile with path segments.
+                    // We revert to the publicpreview endpoint which we KNOW works (images load).
+                    // Appending &download=1 forces Content-Disposition: attachment.
+                    // We trust thefilePath exactly as it is (including Share Root if present),
+                    // because that is what Nextcloud generated for the working preview.
 
-                    const parts = filePath.split('/').filter(p => p.length > 0);
-                    let relativePath = filePath;
-
-                    // If we have at least 2 parts (ShareName + File), strip the first.
-                    // e.g. /Gallery/Image.jpg -> /Image.jpg
-                    // e.g. /Gallery/Full/Image.jpg -> /Full/Image.jpg
-                    if (parts.length >= 2) {
-                        relativePath = '/' + parts.slice(1).join('/');
-                    }
-
-                    // 2. Split into Directory and Filename for the official Download Endpoint
-                    // API: /index.php/s/[token]/download?path=[dir]&files=[name]
-                    const lastSlash = relativePath.lastIndexOf('/');
-                    const directory = lastSlash > 0 ? relativePath.substring(0, lastSlash) : '/';
-                    const filename = lastSlash >= 0 ? relativePath.substring(lastSlash + 1) : relativePath;
-
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
+                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&a=true&download=1`;
                 }
             }
         }
