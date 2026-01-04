@@ -89,37 +89,24 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL CORRECTED LOGIC:
-                    // 1. Trust source path (Do NOT strip first segment, as /Full/Image.jpg IS the correct relative path).
-                    const targetPath = filePath;
+                    // ULTIMATE FIX - FORCE FULL RESOLUTION
+                    // The ZIP logic works because it forces the directory to be "/Full".
+                    // We will do the exact same here. We ignore the source folder (which might be "Web").
+                    // We grab the filename and ask Nextcloud for that file inside "/Full".
 
-                    // 2. Split directory/filename
-                    const lastSlash = targetPath.lastIndexOf('/');
-                    let directory = '';
-                    let filename = targetPath;
-
+                    // 1. Extract Filename
+                    const lastSlash = filePath.lastIndexOf('/');
+                    let filename = filePath;
                     if (lastSlash >= 0) {
-                        if (lastSlash === 0) {
-                            // File at root: /Image.jpg
-                            directory = '';
-                            filename = targetPath.substring(1);
-                        } else {
-                            // File in folder: /Full/Image.jpg -> directory: /Full
-                            directory = targetPath.substring(0, lastSlash);
-                            filename = targetPath.substring(lastSlash + 1);
-                        }
-                    } else {
-                        directory = '';
-                        filename = targetPath;
+                        filename = filePath.substring(lastSlash + 1);
                     }
 
-                    // 3. Remove leading slash from directory if present
-                    // Nextcloud /download endpoint often prefers "Full" over "/Full"
-                    if (directory.startsWith('/')) {
-                        directory = directory.substring(1);
-                    }
+                    // 2. Force Directory to '/Full'
+                    // This ensures we get the high-res version and avoids 404s from "Web" or root paths.
+                    const directory = '/Full';
 
-                    // 4. Use Official Download Endpoint
+                    // 3. Use Official Download Endpoint
+                    // path=/Full, files=Image.jpg
                     return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
