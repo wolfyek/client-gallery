@@ -87,30 +87,39 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL RELIABLE LOGIC:
-                    // 1. Trust source path.
-                    const targetPath = filePath;
+                    // FINAL SYNCED LOGIC (Matches Working ZIP Logic):
+                    // 1. Strip the "Share Root" from the path so it is relative to the share.
+                    // The ZIP function does this and works, so we MUST do it here too.
+                    // Usage: /index.php/s/[token]/download expects path relative to share.
 
-                    // 2. Split directory/filename for /download endpoint
-                    const lastSlash = targetPath.lastIndexOf('/');
+                    const parts = filePath.split('/').filter(p => p.length > 0);
+                    let relativePath = filePath;
+
+                    // If we have at least 2 parts (ShareName + File), strip the first.
+                    // e.g. /Gallery/Image.jpg -> /Image.jpg
+                    if (parts.length >= 2) {
+                        relativePath = '/' + parts.slice(1).join('/');
+                    }
+
+                    // 2. Split into Directory and Filename for /download endpoint
+                    const lastSlash = relativePath.lastIndexOf('/');
                     let directory = '/';
-                    let filename = targetPath;
+                    let filename = relativePath;
 
                     if (lastSlash >= 0) {
                         if (lastSlash === 0) {
                             directory = '/';
-                            filename = targetPath.substring(1);
+                            filename = relativePath.substring(1);
                         } else {
-                            directory = targetPath.substring(0, lastSlash);
-                            filename = targetPath.substring(lastSlash + 1);
+                            directory = relativePath.substring(0, lastSlash);
+                            filename = relativePath.substring(lastSlash + 1);
                         }
                     } else {
                         directory = '/';
-                        filename = targetPath;
+                        filename = relativePath;
                     }
 
                     // 3. Use Official Download Endpoint
-                    // This guarantees Content-Disposition: attachment
                     return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
