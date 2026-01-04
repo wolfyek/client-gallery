@@ -117,31 +117,42 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // Extract Base URL
             const baseUrl = urlObj.origin;
 
-            // Extract Parent Folder Path
-            // file param: /Full/Image.jpg -> /Full
+            // file param: /ShareName/Full/Image.jpg
             const fileParam = urlObj.searchParams.get("file");
             if (!fileParam) throw new Error("Could not extract file path");
 
-            const lastSlash = fileParam.lastIndexOf('/');
-            let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
+            // STRIP SHARE ROOT
+            // We need path relative to share root.
+            const parts = fileParam.split('/').filter(p => p.length > 0);
+            let relativePathParam = fileParam;
+            if (parts.length >= 2) {
+                relativePathParam = '/' + parts.slice(1).join('/');
+            }
+
+            // Extract Parent Directory from Relative Path
+            // e.g. /Full/Image.jpg -> /Full
+            const lastSlash = relativePathParam.lastIndexOf('/');
+            let parentDir = lastSlash > 0 ? relativePathParam.substring(0, lastSlash) : '/';
+
+            // INTELLIGENT PATH SWAP:
+            // Goal: Always download the "Full" folder if possible.
 
             // INTELLIGENT PATH SWAP:
             // Goal: Always download the "Full" folder if possible.
 
             // 1. If currently pointing to Web, switch to Full
-            if (parentDir.match(/\/web$/i)) {
-                parentDir = parentDir.replace(/\/web$/i, '/Full');
+            if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
+                parentDir = parentDir.replace(/web/i, 'Full');
             }
             // 2. If NOT pointing to Full, append Full.
             // This handles root "/" -> "/Full"
-            // And "/Gallery" -> "/Gallery/Full"
-            else if (!parentDir.match(/\/full$/i)) {
+            else if (!parentDir.match(/\/full$/i) && !parentDir.match(/\/full\//i)) {
                 // Remove trailing slash if exists (except root) then append /Full
                 if (parentDir === '/') parentDir = '/Full';
                 else parentDir = parentDir + '/Full';
             }
 
-            // Remove any double slashes just in case
+            // Normalize slashes
             parentDir = parentDir.replace(/\/\//g, '/');
 
             // Construct Direct ZIP URL
