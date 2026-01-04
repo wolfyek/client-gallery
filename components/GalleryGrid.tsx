@@ -99,40 +99,49 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     const performDownloadAll = async (currentEmail: string) => {
         if (photos.length === 0) return;
 
-        setIsZipping(true);
-        setZipProgress(50); // Fake progress since it's server side now
-
         try {
             // Log the bulk download
-            await recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE", photos[0].src, `${galleryTitle}.zip`);
+            await recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE-DIRECT", "BATCH", `${galleryTitle}.zip`);
 
-            // Use the first photo to extract the Share Token and Folder Path
+            // Extract Token and Path from the first photo
+            // URL format: .../publicpreview/TOKEN?file=/Path/To/Image.jpg...
             const sampleUrl = resolveNextcloudUrl(photos[0].src);
+            const urlObj = new URL(sampleUrl);
 
-            // Construct the Proxy ZIP URL
-            // This endpoint will calculate the parent folder and ask Nextcloud to ZIP it.
-            const proxyZipUrl = `/api/download?kind=zip&url=${encodeURIComponent(sampleUrl)}`;
+            // Extract Token
+            // Expected: .../publicpreview/[token]
+            const match = sampleUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
+            if (!match) throw new Error("Could not extract token from URL");
+            const token = match[1];
 
-            // Trigger download via invisible iframe or link
-            const link = document.createElement('a');
-            link.href = proxyZipUrl;
-            link.download = `${galleryTitle}.zip`; // Hint
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Extract Base URL
+            const baseUrl = urlObj.origin;
 
-            setZipProgress(100);
+            // Extract Parent Folder Path
+            // file param: /Full/Image.jpg -> /Full
+            const fileParam = urlObj.searchParams.get("file");
+            if (!fileParam) throw new Error("Could not extract file path");
 
-            // Wait a bit to show 100% then reset
-            setTimeout(() => {
-                setIsZipping(false);
-                setZipProgress(0);
-            }, 2000);
+            const lastSlash = fileParam.lastIndexOf('/');
+            const parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
+
+            // Construct Direct ZIP URL
+            // https://[server]/index.php/s/[token]/download?path=[parentDir]
+            // NOTE: We do NOT use /public.php/webdav - we use the Share Download endpoint which creates ZIPs on the fly.
+            const zipUrl = `${baseUrl}/index.php/s/${token}/download?path=${encodeURIComponent(parentDir)}`;
+
+            console.log("Triggering Direct ZIP:", zipUrl);
+
+            // Trigger Direct Download (Navigation bypasses CORS)
+            // This will prompt the browser to download the file directly from Nextcloud.
+            window.location.href = zipUrl;
+
+            // Close modal/reset state
+            setShowEmailModal(false);
 
         } catch (error) {
-            console.error("ZIP Generation failed:", error);
-            alert("Napaka pri prenosu ZIP datoteke.");
-            setIsZipping(false);
+            console.error("Direct ZIP failed:", error);
+            alert("Napaka pri pripravi povezave za prenos. Prosim poskusite kasneje.");
         }
     };
 
