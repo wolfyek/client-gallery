@@ -86,37 +86,13 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL STABLE LOGIC:
-                    // 1. Trust the filePath exactly as provided by the working preview URL.
-                    // Do NOT attempt to swap Web->Full here, as it risks 404s if structure differs.
-                    // The user just wants the file to download instantly.
+                    // FINAL ATTEMPT - CLEAN PREVIEW DOWNLOAD
+                    // We use the preview endpoint because we know it locates the file.
+                    // We STRIP all display parameters (x, y, a, scalingup).
+                    // We ADD download=1 to force attachment.
+                    // This avoids path relativity issues with the /download endpoint.
 
-                    const targetPath = filePath;
-
-                    // 2. Split into Directory and Filename for /download endpoint
-                    // handling root paths "/" correctly.
-                    const lastSlash = targetPath.lastIndexOf('/');
-                    let directory = '/';
-                    let filename = targetPath;
-
-                    if (lastSlash >= 0) {
-                        if (lastSlash === 0) {
-                            // File is at root: /Image.jpg -> dir: /, file: Image.jpg
-                            directory = '/';
-                            filename = targetPath.substring(1);
-                        } else {
-                            // File is in folder: /Folder/Image.jpg
-                            directory = targetPath.substring(0, lastSlash);
-                            filename = targetPath.substring(lastSlash + 1);
-                        }
-                    } else {
-                        // No slashes? Assume root.
-                        directory = '/';
-                        filename = targetPath;
-                    }
-
-                    // 3. Construct Official Download URL
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
+                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&download=1`;
                 }
             }
         }
