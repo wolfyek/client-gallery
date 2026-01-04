@@ -80,19 +80,38 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
         // .../publicpreview/TOKEN?file=/Path/To/Image.jpg...
         if (url.includes("/publicpreview/")) {
             const urlObj = new URL(url);
-            const match = url.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
+            // Loose regex to match token until start of query params or end of string
+            const match = url.match(/\/publicpreview\/([^/?&]+)/);
             if (match) {
                 const token = match[1];
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL ATTEMPT - CLEAN PREVIEW DOWNLOAD
-                    // We use the preview endpoint because we know it locates the file.
-                    // We STRIP all display parameters (x, y, a, scalingup).
-                    // We ADD download=1 to force attachment.
-                    // This avoids path relativity issues with the /download endpoint.
+                    // FINAL RELIABLE LOGIC:
+                    // 1. Trust source path.
+                    const targetPath = filePath;
 
-                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&download=1`;
+                    // 2. Split directory/filename for /download endpoint
+                    const lastSlash = targetPath.lastIndexOf('/');
+                    let directory = '/';
+                    let filename = targetPath;
+
+                    if (lastSlash >= 0) {
+                        if (lastSlash === 0) {
+                            directory = '/';
+                            filename = targetPath.substring(1);
+                        } else {
+                            directory = targetPath.substring(0, lastSlash);
+                            filename = targetPath.substring(lastSlash + 1);
+                        }
+                    } else {
+                        directory = '/';
+                        filename = targetPath;
+                    }
+
+                    // 3. Use Official Download Endpoint
+                    // This guarantees Content-Disposition: attachment
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
         }
