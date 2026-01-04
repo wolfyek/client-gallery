@@ -102,28 +102,10 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
     }
 
     // Case 2: Already a Nextcloud Preview URL
+    // Legacy note: We used to try adding &download=1 here, but that only yields a thumbnail.
+    // We now return null to force the usage of /api/download (WebDAV Proxy) which gets the full file.
     if (url.includes("/publicpreview/")) {
-        try {
-            const urlObj = new URL(url);
-
-            // Critical: Remove scaling parameters to ensure we download the original FULL resolution image
-            // and not a generated preview.
-            urlObj.searchParams.delete("x");
-            urlObj.searchParams.delete("y");
-            urlObj.searchParams.delete("scalingup");
-
-            // Ensure download=1 is set to force Content-Disposition: attachment (or at least serve binary)
-            urlObj.searchParams.set("download", "1");
-
-            // Ensure auth param is kept or added if missing (usually 'a=true')
-            if (!urlObj.searchParams.has("a")) {
-                urlObj.searchParams.set("a", "true");
-            }
-
-            return urlObj.toString();
-        } catch (e) {
-            console.error("Failed to resolve Nextcloud Preview Download URL", e);
-        }
+        return null;
     }
 
     return null;
