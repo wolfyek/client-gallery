@@ -14,21 +14,36 @@ export function formatSlovenianDate(isoDate: string) {
     });
 }
 
-import { saveAs } from "file-saver";
-
 export async function downloadImage(url: string, filename: string) {
-    // Resolve to the Direct Nextcloud Download URL
     const downloadUrl = resolveNextcloudDownloadUrl(url);
+    const targetUrl = downloadUrl || url;
 
-    if (!downloadUrl) {
-        console.error("Could not resolve proper download URL. Aborting to prevent white-screen fallback.");
-        return;
+    try {
+        // Attempt Direct Fetch to force "Save As" (Prevent New Tab/Inline View)
+        // This requires CORS support on Nextcloud.
+        const response = await fetch(targetUrl);
+
+        if (!response.ok) throw new Error("Fetch failed");
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename; // Force the filename
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+
+    } catch (e) {
+        console.warn("Direct fetch download failed (CORS?), falling back to navigation.", e);
+        // Fallback: This might open in new tab if it's an image, but it's the best we can do if Cross-Origin is blocked.
+        // We add 'download' attribute to URL if possible or rely on headers.
+        window.location.href = targetUrl;
     }
-
-    // Trigger Native Browser Download via Navigation
-    // This is the most reliable way for Cross-Origin downloads (Nextcloud) where 'download' attribute is ignored.
-    // If the server sends Content-Disposition: attachment, the browser will stay on page and download.
-    window.location.href = downloadUrl;
 }
 
 export function resolveNextcloudUrl(url: string | undefined): string {
@@ -74,7 +89,9 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
 
             if (server && token && path) {
                 const cleanServer = server.replace(/\/$/, "");
-                return `${cleanServer}/index.php/s/${token}/download?path=${encodeURIComponent(path)}`;
+                // Use WebDAV path for reliability (bypassing ZIP controller)
+                const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+                return `${cleanServer}/public.php/dav/files/${token}/${encodedPath.startsWith('/') ? encodedPath.substring(1) : encodedPath}`;
             }
         }
 
@@ -89,13 +106,36 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
                 const filePath = urlObj.searchParams.get("file");
 
                 if (filePath) {
-                    // FINAL ATTEMPT - PUBLIC PREVIEW DOWNLOAD STRATEGY
-                    // The '/download' endpoint is aggressively Zipping files (redirecting to ?accept=zip).
-                    // We fall back to the 'publicpreview' endpoint which defines the image source.
-                    // By removing dimensions and adding 'download=1', we force Nextcloud to serve the raw file
-                    // with Content-Disposition: attachment.
+                    // WEBDAV DIRECT ACCESS STRATEGY
+                    // We use the public WebDAV endpoint to access the RAW file.
+                    // This completely bypasses the /download controller (which forces ZIP)
+                    // and the /publicpreview controller (which resizes images).
+                    // URL Structure: /public.php/dav/files/{token}/{path}
 
-                    return `${urlObj.origin}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(filePath)}&a=true&download=1`;
+                    let targetPath = filePath;
+
+                    // Intelligent Swap: If directory is exact match 'Web', make it 'Full'
+                    // We match specific segments to avoid breaking weird filenames.
+                    const parts = targetPath.split('/');
+                    const webIndex = parts.findIndex(p => p.toLowerCase() === 'web');
+
+                    if (webIndex !== -1) {
+                        // Check if we aren't just at root (preserving flat galleries)
+                        // Actually, if 'Web' exists as a folder, we almost certainly want 'Full' if it exists.
+                        // We will swap it.
+                        parts[webIndex] = 'Full';
+                        targetPath = parts.join('/');
+                    }
+
+                    // Ensure path starts with slash for consistency before creating URL
+                    if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
+
+                    // Encode each segment correctly (but keep slashes)
+                    const encodedPath = targetPath.split('/').map(s => encodeURIComponent(s)).join('/');
+
+                    // Construct WebDAV URL
+                    // Note: public.php/dav/files/{token} is the base.
+                    return `${urlObj.origin}/public.php/dav/files/${token}${encodedPath}`;
                 }
             }
         }
