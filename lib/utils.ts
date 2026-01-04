@@ -20,13 +20,15 @@ export async function downloadImage(url: string, filename: string) {
     // Resolve to the Direct Nextcloud Download URL
     const downloadUrl = resolveNextcloudDownloadUrl(url);
 
-    // Use resolved URL or fallback to the provided URL (via redirector if needed, though redirector just uses the same logic)
-    const targetUrl = downloadUrl || url;
+    if (!downloadUrl) {
+        console.error("Could not resolve proper download URL. Aborting to prevent white-screen fallback.");
+        return;
+    }
 
     // Trigger Native Browser Download via Navigation
     // This is the most reliable way for Cross-Origin downloads (Nextcloud) where 'download' attribute is ignored.
     // If the server sends Content-Disposition: attachment, the browser will stay on page and download.
-    window.location.href = targetUrl;
+    window.location.href = downloadUrl;
 }
 
 export function resolveNextcloudUrl(url: string | undefined): string {
@@ -103,19 +105,19 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
 
                     // 2. Split into Directory and Filename for /download endpoint
                     const lastSlash = relativePath.lastIndexOf('/');
-                    let directory = '/';
+                    let directory = ''; // Default to empty string for root (safer than /)
                     let filename = relativePath;
 
                     if (lastSlash >= 0) {
                         if (lastSlash === 0) {
-                            directory = '/';
+                            directory = ''; // Root
                             filename = relativePath.substring(1);
                         } else {
                             directory = relativePath.substring(0, lastSlash);
                             filename = relativePath.substring(lastSlash + 1);
                         }
                     } else {
-                        directory = '/';
+                        directory = '';
                         filename = relativePath;
                     }
 
