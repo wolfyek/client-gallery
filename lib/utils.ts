@@ -91,42 +91,36 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
             if (server && token && path) {
                 const cleanServer = server.replace(/\/$/, "");
                 const cleanPath = path.startsWith('/') ? path : `/${path}`;
-                // Direct Download URL: /s/{token}/download?path={dir}&files={filename}
-                const pathParts = cleanPath.split('/');
-                const filename = pathParts.pop();
-                const dir = pathParts.join('/') || '/';
 
-                return `${cleanServer}/index.php/s/${token}/download?path=${encodeURIComponent(dir)}&files=${encodeURIComponent(filename || "")}`;
+                // Use Public Preview with download=1 as it returns the binary reliably (200 OK), 
+                // whereas /s/token/download often redirects to a broken WebDAV ZIP URL.
+                return `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&a=true&download=1`;
             }
         } catch (e) {
             console.error("Failed to resolve Nextcloud Proxy Download URL", e);
         }
     }
 
-    // Case 2: Already a Nextcloud Preview URL (from new imports or previously resolved)
-    // Format: .../publicpreview/[token]?file=[path]...
+    // Case 2: Already a Nextcloud Preview URL
     if (url.includes("/publicpreview/")) {
         try {
-            //Regex to extract token and file path
-            // Example: .../publicpreview/xXMnjAgqBFBG8zG?file=%2FFull%2FJKL.jpg...
-            const match = url.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
-            if (match && match[1]) {
-                const token = match[1];
-                const urlObj = new URL(url);
-                const fileParam = urlObj.searchParams.get("file");
+            const urlObj = new URL(url);
 
-                if (fileParam) {
-                    // Reconstruct base URL from the input URL origin
-                    // Assumption: The input URL is absolute if it's external
-                    const origin = urlObj.origin;
+            // Critical: Remove scaling parameters to ensure we download the original FULL resolution image
+            // and not a generated preview.
+            urlObj.searchParams.delete("x");
+            urlObj.searchParams.delete("y");
+            urlObj.searchParams.delete("scalingup");
 
-                    const pathParts = fileParam.split('/');
-                    const filename = pathParts.pop();
-                    const dir = pathParts.join('/') || '/';
+            // Ensure download=1 is set to force Content-Disposition: attachment (or at least serve binary)
+            urlObj.searchParams.set("download", "1");
 
-                    return `${origin}/index.php/s/${token}/download?path=${encodeURIComponent(dir)}&files=${encodeURIComponent(filename || "")}`;
-                }
+            // Ensure auth param is kept or added if missing (usually 'a=true')
+            if (!urlObj.searchParams.has("a")) {
+                urlObj.searchParams.set("a", "true");
             }
+
+            return urlObj.toString();
         } catch (e) {
             console.error("Failed to resolve Nextcloud Preview Download URL", e);
         }
