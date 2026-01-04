@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { formatSlovenianDate } from "@/lib/utils";
+import { formatSlovenianDate, resolveNextcloudUrl } from "@/lib/utils";
 import { Search, Instagram, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { type Gallery } from "@/lib/data";
@@ -133,7 +133,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                             {/* Image Container */}
                             <div className="relative aspect-[3/2] w-full overflow-hidden bg-white/5 mb-3">
                                 <Image
-                                    src={gallery.coverImage}
+                                    src={resolveNextcloudUrl(gallery.coverImage)}
                                     alt={gallery.title}
                                     fill
                                     unoptimized

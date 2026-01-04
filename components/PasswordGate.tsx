@@ -7,6 +7,7 @@ import { Lock, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { resolveNextcloudUrl } from "@/lib/utils";
 
 export default function PasswordGate({
     correctPassword,
@@ -62,7 +63,7 @@ export default function PasswordGate({
                 {/* Background Image without Blur */}
                 <div className="absolute inset-0 z-0">
                     <Image
-                        src={coverImage}
+                        src={resolveNextcloudUrl(coverImage)}
                         alt="Background"
                         fill
                         className="object-cover opacity-60"
