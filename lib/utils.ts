@@ -81,28 +81,24 @@ export function resolveNextcloudDownloadUrl(url: string | undefined): string | n
         }
 
         // Case 2: Standard Public Preview URL
-        // .../publicpreview/TOKEN?file=/GalleryName/Image.jpg...
+        // .../publicpreview/TOKEN?file=/Path/To/Image.jpg...
         if (url.includes("/publicpreview/")) {
             const urlObj = new URL(url);
             const match = url.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
             if (match) {
                 const token = match[1];
-                const file = urlObj.searchParams.get("file");
-                if (file) {
-                    // Nextcloud "file" param usually includes the Share Folder Name (e.g. /Gallery/Image.jpg)
-                    // But the "path" param for /download expects path relative to Share Root (e.g. /Image.jpg)
-                    // We must strip the first segment.
+                const filePath = urlObj.searchParams.get("file");
 
-                    const parts = file.split('/').filter(p => p.length > 0);
-                    let relativePath = file;
+                if (filePath) {
+                    // The 'path' param in /download expects a DIRECTORY.
+                    // The 'files' param expects the FILENAME.
+                    // Providing full path to 'path' caused ZIP fallbacks or 404s.
 
-                    if (parts.length >= 2) {
-                        // e.g. /Gallery/Image.jpg -> /Image.jpg
-                        relativePath = '/' + parts.slice(1).join('/');
-                    }
-                    // If parts.length is 1, it might be at root, keep as is.
+                    const lastSlash = filePath.lastIndexOf('/');
+                    const directory = lastSlash > 0 ? filePath.substring(0, lastSlash) : '/';
+                    const filename = lastSlash >= 0 ? filePath.substring(lastSlash + 1) : filePath;
 
-                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(relativePath)}`;
+                    return `${urlObj.origin}/index.php/s/${token}/download?path=${encodeURIComponent(directory)}&files=${encodeURIComponent(filename)}`;
                 }
             }
         }
