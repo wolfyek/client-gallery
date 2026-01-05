@@ -8,10 +8,13 @@ interface PasswordGateProps {
     isLocked: boolean;
     onUnlock: (password: string) => Promise<boolean>;
     galleryTitle: string;
+    coverImage?: string;
     lang?: Language;
 }
 
-export default function PasswordGate({ isLocked, onUnlock, galleryTitle, lang = 'sl' }: PasswordGateProps) {
+import { resolveNextcloudUrl } from "@/lib/utils";
+
+export default function PasswordGate({ isLocked, onUnlock, galleryTitle, coverImage, lang = 'sl' }: PasswordGateProps) {
     const t = getTranslation(lang);
     const [password, setPassword] = useState("");
     const [error, setError] = useState(false);
@@ -34,15 +37,23 @@ export default function PasswordGate({ isLocked, onUnlock, galleryTitle, lang = 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a] text-white">
-            <div className="w-full max-w-md p-8 md:p-12 space-y-8 text-center">
+            {/* Background Image with low opacity */}
+            {coverImage && (
+                <div
+                    className="absolute inset-0 bg-cover bg-center opacity-20 pointer-events-none blur-sm"
+                    style={{ backgroundImage: `url(${resolveNextcloudUrl(coverImage)})` }}
+                />
+            )}
+
+            <div className="relative w-full max-w-md p-8 md:p-12 space-y-8 text-center bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
                 {/* Header */}
                 <div className="space-y-4">
-                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10">
-                        <Lock className="w-8 h-8 text-white/80" />
+                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10">
+                        <Lock className="w-6 h-6 md:w-8 md:h-8 text-white/80" />
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-3xl font-light tracking-wide font-sans">{t.password_required}</h1>
-                        <p className="text-white/40 font-dm">{t.password_desc}</p>
+                        <h1 className="text-xl md:text-3xl font-light tracking-wide font-dm uppercase">{t.password_required}</h1>
+                        <p className="text-sm md:text-base text-white/40 font-dm">{t.password_desc}</p>
                     </div>
                 </div>
 

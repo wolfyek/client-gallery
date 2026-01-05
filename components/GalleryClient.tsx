@@ -63,6 +63,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
                 isLocked={isLocked}
                 onUnlock={handleUnlock}
                 galleryTitle={displayTitle}
+                coverImage={gallery.coverImage}
                 lang={lang}
             />
         );
