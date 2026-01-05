@@ -154,21 +154,16 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             parentDir = parentDir.replace(/\/\//g, '/');
 
             // Construct Direct ZIP URL
-            // https://[server]/index.php/s/[token]/download?path=[parentDir]
-            // NOTE: We do NOT use /public.php/webdav - we use the Share Download endpoint which creates ZIPs on the fly.
-            // FIX: If path is root '/', do NOT add ?path= parameter.
-            let zipUrl = `${baseUrl}/index.php/s/${token}/download`;
-            if (parentDir && parentDir !== '/') {
-                zipUrl += `?path=${encodeURIComponent(parentDir)}`;
-            }
+            // https://[server]/index.php/s/[token]/download
+            // STRATEGY: We omit the '?path=' parameter completely to download the SHARE ROOT.
+            // This is the most reliable method and avoids path mismatch errors (404s).
+            // It effectively downloads everything in the share (Full + Web if present), which is acceptable for stability.
+            const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
 
             console.log("Triggering Direct ZIP:", zipUrl);
 
             // Close modal immediately
             setShowEmailModal(false);
-
-            // DEBUG ALERT
-            alert(`DEBUG: Trying to download ZIP\nURL: ${zipUrl}`);
 
             // Trigger Direct Download via Window Location
             // We use window.location.href instead of anchor click to avoid potential mobile browser issues with detached elements
