@@ -100,8 +100,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (photos.length === 0) return;
 
         try {
-            // Log the bulk download
-            await recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE-DIRECT", "BATCH", `${galleryTitle}.zip`);
+            // Fire and forget logging (don't await) to preserve User Gesture for mobile browsers
+            recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
             // Extract Token and Path from the first photo
             // URL format: .../publicpreview/TOKEN?file=/Path/To/Image.jpg...
@@ -131,13 +131,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
             // Extract Parent Directory from Relative Path
             // e.g. /Full/Image.jpg -> /Full
-            // Extract Parent Directory from Relative Path
-            // e.g. /Full/Image.jpg -> /Full
             const lastSlash = relativePathParam.lastIndexOf('/');
             let parentDir = lastSlash > 0 ? relativePathParam.substring(0, lastSlash) : '/';
 
             // INTELLIGENT PATH SWAP:
-            // Goal: Swapping 'Web' to 'Full' to ensure high quality.
+            // Goal: Swapping 'Web' to 'Full' to ensure high quality (if explicitly present).
             // But if it is already root '/', assume Flat Gallery and do NOT force '/Full'.
 
             // 1. If currently pointing to Web, switch to Full
@@ -156,12 +154,16 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
             console.log("Triggering Direct ZIP:", zipUrl);
 
-            // Trigger Direct Download (Navigation bypasses CORS)
-            // This will prompt the browser to download the file directly from Nextcloud.
-            window.location.href = zipUrl;
-
-            // Close modal/reset state
+            // Close modal immediately
             setShowEmailModal(false);
+
+            // Trigger Direct Download via Anchor Click (Better for Mobile than window.location)
+            const link = document.createElement('a');
+            link.href = zipUrl;
+            link.setAttribute('download', `${galleryTitle}.zip`); // Hint to browser
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
         } catch (error) {
             console.error("Direct ZIP failed:", error);
