@@ -27,6 +27,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
         if (!gallery.password) {
             setIsLocked(false);
             setIsChecking(false);
+            window.scrollTo(0, 0); // Force scroll to top for public galleries
             return;
         }
 
@@ -35,6 +36,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
             setIsLocked(false);
         }
         setIsChecking(false);
+        window.scrollTo(0, 0); // Force scroll to top after auth check
     }, [gallery.id, gallery.password]);
 
     const handleUnlock = async (password: string) => {
