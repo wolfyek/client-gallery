@@ -142,8 +142,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // This is the only way to guarantee the ZIP path is valid on all devices.
             const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
 
-            // DEPRECATED LOGIC REMOVED
-            // No ?path= parameter is sent.
+            // TEMP DEBUG: Force user to see the URL to confirm it's correct
+            alert(`Generated ZIP URL: ${zipUrl}`);
 
             console.log("Download Ready:", zipUrl);
 
