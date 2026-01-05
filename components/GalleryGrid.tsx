@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react
 import { motion, AnimatePresence } from "framer-motion";
 import { type Photo } from "@/lib/data";
 import Image from "next/image";
-import { Download, X, ChevronLeft, ChevronRight, Archive, Check } from "lucide-react";
+import { Download, X, ChevronLeft, ChevronRight, Archive, Check, Copy } from "lucide-react";
 import { downloadImage, resolveNextcloudUrl } from "@/lib/utils";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -142,8 +142,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // This is the only way to guarantee the ZIP path is valid on all devices.
             const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
 
-            // TEMP DEBUG: Force user to see the URL to confirm it's correct
-            alert(`Generated ZIP URL: ${zipUrl}`);
+            // TEMP DEBUG REMOVED
+            // alert(`Generated ZIP URL: ${zipUrl}`);
 
             console.log("Download Ready:", zipUrl);
 
@@ -501,6 +501,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                 <div className="space-y-4">
                                     <a
                                         href={downloadReadyUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         onClick={() => {
                                             // Give it a moment to register the click before closing
                                             setTimeout(() => {
@@ -513,6 +515,20 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         <Download className="w-5 h-5" />
                                         {lang === 'en' ? "DOWNLOAD NOW" : "PRENESI ZDAJ"}
                                     </a>
+
+                                    <button
+                                        onClick={() => {
+                                            if (downloadReadyUrl) {
+                                                navigator.clipboard.writeText(downloadReadyUrl);
+                                                alert(lang === 'en' ? "Link copied!" : "Povezava kopirana!");
+                                            }
+                                        }}
+                                        className="block w-full text-white/50 hover:text-white uppercase tracking-widest text-xs py-2 flex items-center justify-center gap-2"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                        {lang === 'en' ? "Copy Link" : "Kopiraj povezavo"}
+                                    </button>
+
                                     <button
                                         onClick={() => {
                                             setShowEmailModal(false);
