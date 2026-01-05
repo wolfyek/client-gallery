@@ -139,35 +139,38 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             const lastSlash = fileParam.lastIndexOf('/');
             let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
 
-            // INTELLIGENT PATH SWAP (DISABLED FOR DEBUGGING/STABILITY)
-            // Goal: Swapping 'Web' to 'Full' to ensure high quality (if explicitly present).
-            // But if it is already root '/', assume Flat Gallery and do NOT force '/Full'.
+            // INTELLIGENT PATH SWAP:
+            // Goal: Swap 'Web' to 'Full' to ensure high quality (if explicitly present).
 
-            /*
             // 1. If currently pointing to Web, switch to Full
             if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
                 parentDir = parentDir.replace(/web/i, 'Full');
             }
-            */
 
             // Normalize slashes
             parentDir = parentDir.replace(/\/\//g, '/');
 
             // Construct Direct ZIP URL
-            // https://[server]/index.php/s/[token]/download
-            // STRATEGY: We omit the '?path=' parameter completely to download the SHARE ROOT.
-            // This is the most reliable method and avoids path mismatch errors (404s).
-            // It effectively downloads everything in the share (Full + Web if present), which is acceptable for stability.
-            const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
+            // https://[server]/index.php/s/[token]/download?path=[parentDir]
+            let zipUrl = `${baseUrl}/index.php/s/${token}/download`;
+            if (parentDir && parentDir !== '/') {
+                zipUrl += `?path=${encodeURIComponent(parentDir)}`;
+            }
 
             console.log("Triggering Direct ZIP:", zipUrl);
 
             // Close modal immediately
             setShowEmailModal(false);
 
-            // Trigger Direct Download via Window Location
-            // We use window.location.href instead of anchor click to avoid potential mobile browser issues with detached elements
-            window.location.href = zipUrl;
+            // Trigger Direct Download via New Tab (Prevents Client App Crash)
+            // Using _blank isolates the download from the current app state, preventing "Application Error" crashes.
+            const newWindow = window.open(zipUrl, '_blank');
+
+            // Fallback for aggressive popup blockers if needed
+            if (!newWindow) {
+                console.warn("Popup blocked, falling back to location.href");
+                window.location.href = zipUrl;
+            }
 
             /* 
             const link = document.createElement('a');
