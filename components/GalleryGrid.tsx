@@ -232,7 +232,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 {allowDownloads && (
                     <button
                         onClick={handleDownloadAll}
-                        className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg py-2 px-4 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-all uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-wait font-dm"
+                        className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg py-2 px-4 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-all uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-wait font-dm"
                     >
                         <Archive className="w-4 h-4" />
                         <span>{t.download_all}</span>
