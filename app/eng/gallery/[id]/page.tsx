@@ -19,8 +19,11 @@ export default async function EnglishGalleryPage({ params }: { params: { id: str
     }
 
     // Canonical Redirection for English
-    if (gallery.slug && params.id !== gallery.slug) {
-        redirect(`/eng/gallery/${gallery.slug}`);
+    // Prefer English Slug, then Slovene Slug, then ID
+    const correctSlug = gallery.slugEn || gallery.slug || gallery.id;
+
+    if (params.id !== correctSlug) {
+        redirect(`/eng/gallery/${correctSlug}`);
     }
 
     return (

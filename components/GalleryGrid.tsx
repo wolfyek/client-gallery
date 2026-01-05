@@ -166,13 +166,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // Close modal immediately
             setShowEmailModal(false);
 
-            // Trigger Direct Download via Anchor Click (Better for Mobile than window.location)
+            // Trigger Direct Download via Window Location
+            // We use window.location.href instead of anchor click to avoid potential mobile browser issues with detached elements
+            window.location.href = zipUrl;
+
+            /* 
             const link = document.createElement('a');
             link.href = zipUrl;
             link.setAttribute('download', `${galleryTitle}.zip`); // Hint to browser
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            */
 
         } catch (error) {
             console.error("Direct ZIP failed:", error);
