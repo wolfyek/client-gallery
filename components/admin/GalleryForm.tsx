@@ -123,7 +123,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
                 <div className="space-y-2">
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Datum (YYYY-MM-DD)</label>
-                    <Input name="date" type="date" defaultValue={gallery?.date} required className="bg-white/5 border-white/10" />
+                    <Input name="date" type="date" defaultValue={gallery?.date} required className="bg-white/5 border-white/10 font-dm uppercase tracking-widest text-sm" />
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2">
                     <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Opis</label>
