@@ -30,7 +30,7 @@ export const translations = {
 
         // Navigation / Home
         home_title: "Farkaš Timi",
-        home_subtitle: "GALERIJA FOTOGRAFIJ",
+        home_subtitle: "GALERIJE FOTOGRAFIJ",
         my_website: "Moja Spletna Stran",
         gallery_locked: "Zaklenjeno",
         gallery_photos: "fotografij",
@@ -75,7 +75,7 @@ export const translations = {
 
         // Navigation / Home
         home_title: "Farkas Timi",
-        home_subtitle: "PHOTO GALLERY",
+        home_subtitle: "PHOTO GALLERIES",
         my_website: "My Website",
         gallery_locked: "Locked",
         gallery_photos: "photos",
