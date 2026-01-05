@@ -307,6 +307,9 @@ export async function updateGallery(id: string, formData: FormData) {
     const category = formData.get("category") as string;
     const slug = formData.get("slug") as string;
     const downloadable = formData.get("downloadable") === "on";
+    const titleEn = formData.get("titleEn") as string;
+    const descriptionEn = formData.get("descriptionEn") as string;
+    const slugEn = formData.get("slugEn") as string;
 
     // Validate Slug Uniqueness (Exclude current gallery)
     if (slug) {

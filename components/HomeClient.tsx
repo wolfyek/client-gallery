@@ -1,8 +1,4 @@
-// I need to view the file first.
-// Can I skip viewing? The user's metadata says it is open but I haven't viewed it in THIS turn.
-// I viewed it in previous session (lines 1-175).
-// I will just use `multi_replace` or view it to be safe.
-// Let's VIEW it first to avoid errors.
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
