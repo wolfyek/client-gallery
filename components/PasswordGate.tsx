@@ -36,7 +36,7 @@ export default function PasswordGate({ isLocked, onUnlock, galleryTitle, coverIm
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a] text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a] text-white p-6">
             {/* Background Image with low opacity */}
             {coverImage && (
                 <div
@@ -69,7 +69,7 @@ export default function PasswordGate({ isLocked, onUnlock, galleryTitle, coverIm
                             }}
                             placeholder={t.enter_password}
                             className={`w-full bg-white/5 border ${error ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-white/30'} 
-                                rounded-xl px-4 py-4 text-center text-lg placeholder:text-white/20 outline-none transition-all font-mono tracking-widest`}
+                                rounded-xl px-4 py-4 text-center text-lg placeholder:text-white/20 outline-none transition-all font-dm tracking-widest`}
                             autoFocus
                         />
                         {error && (
@@ -80,7 +80,7 @@ export default function PasswordGate({ isLocked, onUnlock, galleryTitle, coverIm
                     <button
                         type="submit"
                         disabled={isLoading || !password}
-                        className="w-full bg-white text-black py-4 rounded-xl font-medium tracking-wide hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                        className="w-full bg-white text-black py-4 rounded-xl font-medium tracking-wide hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group font-dm"
                     >
                         {isLoading ? (
                             <>
