@@ -121,28 +121,45 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
 
             // 2. Extract Token
-            // Expected format: .../publicpreview/{token}?file=...
             const match = firstPhotoUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
 
             if (match && match[1]) {
                 const token = match[1];
-                const urlObj = new URL(firstPhotoUrl);
-                // Construct the direct shared folder download URL
-                // Format: https://{domain}/index.php/s/{token}/download?path=/
-                const directZipUrl = `${urlObj.origin}/index.php/s/${token}/download?path=/`;
+                let origin = "";
 
-                // 3. Trigger Download via Anchor Tag (Safer than window.location)
+                try {
+                    // Robus URL parsing
+                    const urlObj = new URL(firstPhotoUrl, window.location.origin);
+                    origin = firstPhotoUrl.startsWith("http") ? new URL(firstPhotoUrl).origin : window.location.origin;
+                    // If firstPhotoUrl is absolute, usage of new URL(firstPhotoUrl) gives its origin.
+                    // If it is relative (unlikely for resolved), we need base.
+                    if (firstPhotoUrl.startsWith("http")) {
+                        origin = new URL(firstPhotoUrl).origin;
+                    }
+                } catch (e) {
+                    console.error("URL Parse Fail", e);
+                    // Fallback to manual slice if needed, or just alert
+                    throw new Error("Invalid Photo URL Structure");
+                }
+
+                // Canonical Nextcloud Share Download URL
+                // Format: https://{domain}/index.php/s/{token}/download
+                // Removing ?path=/ to rely on default behavior (Download Root)
+                const directZipUrl = `${origin}/index.php/s/${token}/download`;
+
+                // 3. Trigger Download via Anchor Tag
                 const link = document.createElement('a');
                 link.href = directZipUrl;
-                link.download = `${galleryTitle}.zip`; // Hint only
+                link.setAttribute('download', ''); // Standard HTML5 download attribute
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
 
-                // 4. Delay modal close to prevent layout thrashing/crashes on mobile
+                // 4. Delay modal close
                 setTimeout(() => {
                     setShowEmailModal(false);
                 }, 500);
+
             } else {
                 console.error("Could not extract Nextcloud token from URL:", firstPhotoUrl);
                 alert(lang === 'en' ?
