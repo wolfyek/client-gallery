@@ -52,8 +52,8 @@ export default function PasswordGate({ isLocked, onUnlock, galleryTitle, coverIm
                         <Lock className="w-6 h-6 md:w-8 md:h-8 text-white/80" />
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-xl md:text-3xl font-light tracking-wide font-dm uppercase">{t.password_required}</h1>
-                        <p className="text-sm md:text-base text-white/40 font-dm">{t.password_desc}</p>
+                        <h1 className="text-lg md:text-3xl font-light tracking-wide font-dm uppercase">{t.password_required}</h1>
+                        <p className="text-xs md:text-base text-white/40 font-dm">{t.password_desc}</p>
                     </div>
                 </div>
 
@@ -80,7 +80,7 @@ export default function PasswordGate({ isLocked, onUnlock, galleryTitle, coverIm
                     <button
                         type="submit"
                         disabled={isLoading || !password}
-                        className="w-full bg-white text-black py-4 rounded-xl font-medium tracking-wide hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group font-dm"
+                        className="w-full bg-white text-black py-3 md:py-4 rounded-xl font-medium tracking-wide hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group font-dm text-sm md:text-base"
                     >
                         {isLoading ? (
                             <>
