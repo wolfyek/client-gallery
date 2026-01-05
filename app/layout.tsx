@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     title: "Galerija - Farkaš Timi",
     description: "Private client photography gallery",
     icons: {
-        icon: "http://streznik.farkastimi.si/Farkas-LOGO.svg",
-        shortcut: "http://streznik.farkastimi.si/Farkas-LOGO.svg",
+        icon: "https://streznik.farkastimi.si/Farkas-LOGO.svg",
+        shortcut: "https://streznik.farkastimi.si/Farkas-LOGO.svg",
     },
 };
 

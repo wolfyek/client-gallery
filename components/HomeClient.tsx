@@ -64,7 +64,7 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
                     <div className="flex flex-col items-center justify-center space-y-6">
                         <Link href={lang === 'en' ? '/eng' : '/'} className="cursor-pointer">
                             <img
-                                src="http://streznik.farkastimi.si/Farkas-LOGO.svg"
+                                src="https://streznik.farkastimi.si/Farkas-LOGO.svg"
                                 alt="Farkaš Timi Logo"
                                 className="h-20 md:h-28 w-auto hover:opacity-80 transition-opacity"
                             />
