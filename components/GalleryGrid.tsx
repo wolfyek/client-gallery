@@ -501,7 +501,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                 <div className="space-y-4">
                                     <a
                                         href={downloadReadyUrl}
-                                        target="_blank"
+                                        target="_self"
                                         className="block w-full bg-green-600 text-white font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-center no-underline"
                                     >
                                         <Download className="w-5 h-5" />
