@@ -110,7 +110,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
         try {
             // Log the attempt (Fire and forget, no await to block UI)
-            recordDownload(currentEmail, galleryTitle, "ZIP-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
+            // recordDownload(currentEmail, galleryTitle, "ZIP-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
             // 1. Get the first photo URL
             const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
@@ -132,14 +132,15 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 const directZipUrl = `${origin}/index.php/s/${token}/download`;
 
                 // 3. Direct Navigation (Safest for Mobile Safari)
-                // This replaces the current context with the download stream.
-                // Since it is an attachment, the page remains, but the browser handles the download.
-                window.location.href = directZipUrl;
+                // Wrapped in setTimeout to clear the event loop/stack before navigating.
+                setTimeout(() => {
+                    window.location.href = directZipUrl;
+                }, 100);
 
                 // 4. Delay modal close
                 setTimeout(() => {
                     setShowEmailModal(false);
-                }, 500);
+                }, 600);
 
             } else {
                 console.error("Could not extract Nextcloud token");
