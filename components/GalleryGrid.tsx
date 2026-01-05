@@ -117,27 +117,63 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             setIsZipping(true);
             setZipProgress(0);
 
-            // Log Client-Side Attempt
-            recordDownload(currentEmail, galleryTitle, "ZIP-CLIENT-SIDE-ATTEMPT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
+            // Log
+            recordDownload(currentEmail, galleryTitle, "ZIP-CLIENT-SIDE", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
-            // 1. SMART CHECK: CORS / DIRECT ACCESS
-            // We attempt to fetch the first image to see if the server allows us.
-            const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
-            if (!firstPhotoUrl) throw new Error("URL resolution failed");
+            const zip = new JSZip();
+            const total = photos.length;
+            let completed = 0;
+            const poolLimit = 3;
+            let hasSystemicFailure = false;
 
-            try {
-                // Try to fetch headers. If this throws, we are blocked.
-                await fetch(firstPhotoUrl, {
-                    method: 'HEAD',
-                    mode: 'cors',
-                    credentials: 'omit',
-                    referrerPolicy: 'no-referrer'
-                });
-            } catch (e) {
-                console.warn("Client-Zip blocked (CORS). activating Fallback.", e);
+            for (let i = 0; i < photos.length; i += poolLimit) {
+                if (hasSystemicFailure) break;
 
-                // FALLBACK: SERVER-SIDE ZIP
-                // Reconstruct the Server ZIP URL
+                const batch = photos.slice(i, i + poolLimit);
+                await Promise.all(batch.map(async (photo) => {
+                    if (hasSystemicFailure) return;
+
+                    try {
+                        const directUrl = resolveNextcloudUrl(photo.src);
+                        if (!directUrl) throw new Error("No URL");
+
+                        // FAIL-FAST FETCH:
+                        // We do NOT use 'HEAD' probe anymore. We just try to get the image.
+                        // We use 'no-referrer' to avoid some blocking, but we keep default mode to be safe on PC.
+                        const response = await fetch(directUrl, {
+                            credentials: 'omit',
+                            referrerPolicy: 'no-referrer'
+                        });
+
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const blob = await response.blob();
+                        const filename = photo.alt ? `${photo.alt}.jpg` : `photo-${photo.id}.jpg`;
+
+                        zip.file(filename, blob);
+                    } catch (e) {
+                        console.error(`Failed to download ${photo.id}`, e);
+
+                        // FAIL-FAST LOGIC:
+                        // If the FIRST batch fails, we assume the Network/CORS is blocking us entirely.
+                        // We abort immediately and switch to the Server-Side ZIP (Fallback).
+                        if (i === 0) {
+                            hasSystemicFailure = true;
+                        } else {
+                            // If a random image fails in the middle, just log it.
+                            zip.file(`error-${photo.id}.txt`, `Failed: ${e}`);
+                        }
+                    } finally {
+                        completed++;
+                        setZipProgress(Math.round((completed / total) * 90));
+                    }
+                }));
+            }
+
+            // IF SYSTEMIC FAILURE DETECTED -> ENABLE FALLBACK
+            if (hasSystemicFailure) {
+                const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
+                console.warn("Systemic Download Failure Detected. Activating Fallback.");
+
                 const match = firstPhotoUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
                 if (match) {
                     const token = match[1];
@@ -147,43 +183,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                     setDownloadReadyUrl(serverZipUrl);
                     setIsZipping(false);
                     alert(lang === 'en' ?
-                        "Direct download blocked by server. Switched to Standard Download." :
-                        "Direkten prenos blokiran s strani strežnika. Preklapljam na standardni prenos.");
+                        "Direct download blocked. Switched to Standard Download." :
+                        "Direkten prenos blokiran. Preklapljam na standardni prenos.");
                     return;
                 }
-            }
-
-            // 2. CLIENT-SIDE ZIP (If Check Passed)
-            const zip = new JSZip();
-            const total = photos.length;
-            let completed = 0;
-            const poolLimit = 3;
-
-            for (let i = 0; i < photos.length; i += poolLimit) {
-                const batch = photos.slice(i, i + poolLimit);
-                await Promise.all(batch.map(async (photo) => {
-                    try {
-                        const directUrl = resolveNextcloudUrl(photo.src);
-                        if (!directUrl) throw new Error("No URL");
-
-                        const response = await fetch(directUrl, {
-                            mode: 'cors',
-                            credentials: 'omit',
-                            referrerPolicy: 'no-referrer'
-                        });
-
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        const blob = await response.blob();
-                        const filename = photo.alt ? `${photo.alt}.jpg` : `photo-${photo.id}.jpg`;
-                        zip.file(filename, blob);
-                    } catch (e) {
-                        console.error(`Failed to download ${photo.id}`, e);
-                        zip.file(`error-${photo.id}.txt`, `Failed: ${e}`);
-                    } finally {
-                        completed++;
-                        setZipProgress(Math.round((completed / total) * 90));
-                    }
-                }));
             }
 
             setZipProgress(95);
@@ -195,9 +198,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             setShowEmailModal(false);
 
         } catch (error) {
-            console.error("Download failed:", error);
+            console.error("Client ZIP failed:", error);
             setIsZipping(false);
-            alert(`Napaka: ${error instanceof Error ? error.message : "Neznana napaka"}`);
+            alert(`Napaka pri prenosu (Client-Zip): ${error instanceof Error ? error.message : "Neznana napaka"}`);
         }
     };
 
