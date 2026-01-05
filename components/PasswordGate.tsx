@@ -1,129 +1,97 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Lock, ArrowLeft } from "lucide-react";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
-import { resolveNextcloudUrl } from "@/lib/utils";
+import { useState } from "react";
+import { Lock, ArrowRight, Loader2 } from "lucide-react";
+import { getTranslation, type Language } from "@/lib/i18n";
 
-export default function PasswordGate({
-    correctPassword,
-    children,
-    galleryTitle,
-    coverImage,
-    galleryId,
-}: {
-    correctPassword?: string;
-    children: React.ReactNode;
+interface PasswordGateProps {
+    isLocked: boolean;
+    onUnlock: (password: string) => Promise<boolean>;
     galleryTitle: string;
-    coverImage: string;
-    galleryId: string;
-}) {
+    lang?: Language;
+}
+
+export default function PasswordGate({ isLocked, onUnlock, galleryTitle, lang = 'sl' }: PasswordGateProps) {
+    const t = getTranslation(lang);
     const [password, setPassword] = useState("");
-    const [unlocked, setUnlocked] = useState(false); // Default to locked initially, check effect will unlock
     const [error, setError] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        // If no password required, unlock immediately
-        if (!correctPassword) {
-            setUnlocked(true);
-            setIsChecking(false);
-            return;
-        }
+    if (!isLocked) return null;
 
-        // Check local storage
-        const storedAuth = localStorage.getItem(`gallery_auth_${galleryId}`);
-        if (storedAuth === "true") {
-            setUnlocked(true);
-        }
-        setIsChecking(false);
-    }, [correctPassword, galleryId]);
-
-    const handleUnlock = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password === correctPassword) {
-            setUnlocked(true);
-            setError(false);
-            localStorage.setItem(`gallery_auth_${galleryId}`, "true");
-        } else {
+        setIsLoading(true);
+        setError(false);
+
+        const success = await onUnlock(password);
+        if (!success) {
             setError(true);
-            // Shake animation trigger logic could go here
+            setIsLoading(false);
         }
+        // If success, parent handles removal (isLoading stays true until unmount)
     };
 
-    if (isChecking) return null; // Prevent flash of locked state
-
-    if (!unlocked) {
-        return (
-            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#121212] text-white">
-                {/* Background Image without Blur */}
-                <div className="absolute inset-0 z-0">
-                    <Image
-                        src={resolveNextcloudUrl(coverImage)}
-                        alt="Background"
-                        fill
-                        className="object-cover opacity-60"
-                        priority
-                        unoptimized
-                    />
-                    <div className="absolute inset-0 bg-black/20" /> {/* Subtle overlay for text contrast */}
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a] text-white">
+            <div className="w-full max-w-md p-8 md:p-12 space-y-8 text-center">
+                {/* Header */}
+                <div className="space-y-4">
+                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10">
+                        <Lock className="w-8 h-8 text-white/80" />
+                    </div>
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-light tracking-wide font-sans">{t.password_required}</h1>
+                        <p className="text-white/40 font-dm">{t.password_desc}</p>
+                    </div>
                 </div>
 
-                {/* Back Link */}
-                <Link
-                    href="/"
-                    className="absolute top-8 left-8 z-20 flex items-center gap-2 text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs drop-shadow-md font-dm"
-                >
-                    <ArrowLeft className="w-4 h-4" /> Nazaj na galerije
-                </Link>
-
-                {/* Login Card */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-sm flex flex-col items-center space-y-8 p-10 relative z-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-sm shadow-2xl"
-                >
-                    <div className="flex flex-col items-center space-y-4">
-                        <Lock className="w-8 h-8 text-white mb-2" />
-                        <h2 className="text-3xl font-bold tracking-tighter uppercase text-center text-white">
-                            {galleryTitle}
-                        </h2>
-                        <p className="text-sm tracking-widest uppercase text-white/70 font-dm">
-                            Zasebna Galerija
-                        </p>
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setError(false);
+                            }}
+                            placeholder={t.enter_password}
+                            className={`w-full bg-white/5 border ${error ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-white/30'} 
+                                rounded-xl px-4 py-4 text-center text-lg placeholder:text-white/20 outline-none transition-all font-mono tracking-widest`}
+                            autoFocus
+                        />
+                        {error && (
+                            <p className="text-red-400 text-xs font-dm animate-pulse">{t.wrong_password}</p>
+                        )}
                     </div>
 
-                    <form onSubmit={handleUnlock} className="w-full space-y-4">
-                        <div className="relative">
-                            <Input
-                                type="password"
-                                placeholder="Vnesite geslo"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className={`text-center tracking-widest bg-black/40 border-white/20 text-white placeholder:text-white/40 focus:bg-black/60 transition-colors font-dm ${error ? 'border-red-500/50' : ''}`}
-                            />
-                        </div>
-                        <Button type="submit" className="w-full uppercase tracking-widest shadow-lg bg-white text-black hover:bg-gray-200 font-dm font-bold">
-                            Vstopi
-                        </Button>
-                        {error && (
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-xs text-red-500 text-center uppercase tracking-widest mt-2 font-bold font-dm"
-                            >
-                                Napačno geslo
-                            </motion.p>
+                    <button
+                        type="submit"
+                        disabled={isLoading || !password}
+                        className="w-full bg-white text-black py-4 rounded-xl font-medium tracking-wide hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>{t.loading}</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>{t.enter_gallery}</span>
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </>
                         )}
-                    </form>
-                </motion.div>
-            </div>
-        );
-    }
+                    </button>
+                </form>
 
-    return <>{children}</>;
+                {/* Footer */}
+                <div className="pt-8">
+                    <p className="text-xs text-white/20 font-dm uppercase tracking-widest">
+                        {t.home_title} © {new Date().getFullYear()} {t.footer_rights}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
 }

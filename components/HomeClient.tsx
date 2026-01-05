@@ -5,13 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatSlovenianDate, resolveNextcloudUrl } from "@/lib/utils";
 import { Search, Instagram, Globe } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { type Gallery } from "@/lib/data";
+import { getTranslation, type Language } from "@/lib/i18n";
 
-export default function HomeClient({ initialGalleries }: { initialGalleries: Gallery[] }) {
+export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialGalleries: Gallery[], lang?: Language }) {
+    const t = getTranslation(lang);
     const [query, setQuery] = useState("");
-
-
     const [category, setCategory] = useState("VSE");
 
     const categories = ["VSE", "Koncert", "Poroka", "Krst", "Rojstni dan", "Šport", "Portret"];
@@ -35,19 +34,17 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                             <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 text-white group-focus-within:text-white transition-colors" />
                             <input
                                 type="text"
-                                placeholder="ISKANJE..."
+                                placeholder={t.search_placeholder}
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="w-full bg-transparent border-b border-white/80 py-2 pl-8 text-sm text-white focus:outline-none focus:border-white transition-colors placeholder:text-white/60 uppercase tracking-widest font-dm"
                             />
                         </div>
-
-
                     </div>
 
                     {/* Center Column: Logo */}
                     <div className="flex flex-col items-center justify-center space-y-6">
-                        <Link href="/" className="cursor-pointer">
+                        <Link href={lang === 'en' ? '/eng' : '/'} className="cursor-pointer">
                             <img
                                 src="http://streznik.farkastimi.si/Farkas-LOGO.svg"
                                 alt="Farkaš Timi Logo"
@@ -56,8 +53,25 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                         </Link>
                     </div>
 
-                    {/* Right Column: Socials (Desktop) */}
-                    <div className="hidden md:flex justify-end gap-6 pt-2">
+                    {/* Right Column: Socials & Lang Switcher (Desktop) */}
+                    <div className="hidden md:flex justify-end gap-6 pt-2 items-center">
+                        {/* Language Switcher */}
+                        <div className="flex items-center gap-2 text-sm font-dm uppercase tracking-widest border-r border-white/20 pr-6 mr-0">
+                            <Link
+                                href="/"
+                                className={`hover:text-white transition-colors ${lang === 'sl' ? 'text-white font-bold' : 'text-white/50'}`}
+                            >
+                                SLO
+                            </Link>
+                            <span className="text-white/20">|</span>
+                            <Link
+                                href="/eng"
+                                className={`hover:text-white transition-colors ${lang === 'en' ? 'text-white font-bold' : 'text-white/50'}`}
+                            >
+                                ENG
+                            </Link>
+                        </div>
+
                         <a
                             href="https://instagram.com/photosbyfarkas"
                             target="_blank"
@@ -72,25 +86,23 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-white/50 hover:text-white transition-colors"
-                            title="Spletna stran"
+                            title={t.my_website}
                         >
                             <Globe className="w-5 h-5" />
                         </a>
                     </div>
-
-
                 </div>
 
                 {/* Subtitle */}
                 <div className="flex flex-col items-center justify-center mb-10 gap-6">
                     <p className="text-[32px] text-white uppercase font-sans font-bold text-center">
-                        galerija fotografij
+                        {t.home_subtitle}
                     </p>
                     <div className="w-full max-w-xs h-[1px] bg-white/20" />
 
                     {/* Category Filter - Centered below title */}
                     <div className="flex items-center gap-4">
-                        <span className="text-xs uppercase tracking-widest text-white/50 font-dm">Kategorija:</span>
+                        <span className="text-xs uppercase tracking-widest text-white/50 font-dm">{t.category_label}</span>
                         <div className="relative">
                             <select
                                 value={category}
@@ -98,7 +110,9 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                                 className="bg-transparent text-white border-b border-white/40 py-1 pr-8 pl-2 uppercase tracking-widest text-sm font-dm focus:outline-none focus:border-white appearance-none cursor-pointer"
                             >
                                 {categories.map((cat) => (
-                                    <option key={cat} value={cat} className="bg-[#121212]">{cat}</option>
+                                    <option key={cat} value={cat} className="bg-[#121212]">
+                                        {cat === "VSE" ? t.all_categories : cat}
+                                    </option>
                                 ))}
                             </select>
                             {/* Custom Arrow */}
@@ -108,28 +122,47 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                         </div>
                     </div>
 
-                    {/* Mobile Search - Below Categories */}
-                    <div className="md:hidden w-full max-w-[200px] mt-2 group">
-                        <div className="relative w-full">
+                    {/* Mobile Search & Lang - Below Categories */}
+                    <div className="md:hidden flex flex-col items-center gap-4 mt-2 w-full">
+                        <div className="w-full max-w-[200px] group relative">
                             <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 text-white/50 group-focus-within:text-white transition-colors" />
                             <input
                                 type="text"
-                                placeholder="ISKANJE..."
+                                placeholder={t.search_placeholder}
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 className="w-full bg-transparent border-b border-white/20 py-2 pl-6 text-xs text-white focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 uppercase tracking-widest font-dm text-center"
                             />
                         </div>
+
+                        {/* Mobile Language Switcher */}
+                        <div className="flex items-center gap-4 text-xs font-dm uppercase tracking-widest pt-2">
+                            <Link
+                                href="/"
+                                className={`transition-colors ${lang === 'sl' ? 'text-white font-bold' : 'text-white/50'}`}
+                            >
+                                SLO
+                            </Link>
+                            <span className="text-white/20">|</span>
+                            <Link
+                                href="/eng"
+                                className={`transition-colors ${lang === 'en' ? 'text-white font-bold' : 'text-white/50'}`}
+                            >
+                                ENG
+                            </Link>
+                        </div>
                     </div>
 
                 </div>
 
-
-
                 {/* Galleries Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10 min-h-[50vh]">
                     {filteredGalleries.map((gallery) => (
-                        <Link key={gallery.id} href={`/galerija/${gallery.id}`} className="group block cursor-pointer">
+                        <Link
+                            key={gallery.id}
+                            href={lang === 'en' ? `/eng/gallery/${gallery.id}` : `/galerija/${gallery.id}`}
+                            className="group block cursor-pointer"
+                        >
                             {/* Image Container */}
                             <div className="relative aspect-[3/2] w-full overflow-hidden bg-white/5 mb-3">
                                 <Image
@@ -147,7 +180,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
                                         : 'bg-green-500/90 text-white'
                                     }`}
                                 >
-                                    {gallery.password ? 'ZASEBNO' : 'JAVNO'}
+                                    {gallery.password ? t.private : t.public}
                                 </div>
                             </div>
 
@@ -165,7 +198,7 @@ export default function HomeClient({ initialGalleries }: { initialGalleries: Gal
 
                     {filteredGalleries.length === 0 && (
                         <div className="col-span-full text-center py-20 text-white/30 uppercase tracking-widest">
-                            Ni rezultatov za "{query}" {category !== "VSE" && `v kategoriji ${category}`}
+                            {t.no_results} "{query}" {category !== "VSE" && `(${category})`}
                         </div>
                     )}
                 </div>

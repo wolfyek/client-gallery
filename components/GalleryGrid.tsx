@@ -9,6 +9,7 @@ import { downloadImage, resolveNextcloudUrl } from "@/lib/utils";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { recordDownload } from "@/app/actions/logging";
+import { getTranslation, type Language } from "@/lib/i18n";
 
 // Animation Variants
 const slideVariants = {
@@ -31,7 +32,8 @@ const slideVariants = {
     })
 };
 
-export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean }) {
+export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true, lang = 'sl' }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean, lang?: Language }) {
+    const t = getTranslation(lang);
     const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
     const [direction, setDirection] = useState(0);
     const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
@@ -121,18 +123,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             const fileParam = urlObj.searchParams.get("file");
             if (!fileParam) throw new Error("Could not extract file path");
 
-            // STRIP SHARE ROOT
-            // We need path relative to share root.
-            const parts = fileParam.split('/').filter(p => p.length > 0);
-            let relativePathParam = fileParam;
-            if (parts.length >= 2) {
-                relativePathParam = '/' + parts.slice(1).join('/');
-            }
-
             // Extract Parent Directory from Relative Path
             // e.g. /Full/Image.jpg -> /Full
-            const lastSlash = relativePathParam.lastIndexOf('/');
-            let parentDir = lastSlash > 0 ? relativePathParam.substring(0, lastSlash) : '/';
+            const lastSlash = fileParam.lastIndexOf('/');
+            let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
 
             // INTELLIGENT PATH SWAP:
             // Goal: Swapping 'Web' to 'Full' to ensure high quality (if explicitly present).
@@ -150,7 +144,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // Construct Direct ZIP URL
             // https://[server]/index.php/s/[token]/download?path=[parentDir]
             // NOTE: We do NOT use /public.php/webdav - we use the Share Download endpoint which creates ZIPs on the fly.
-            const zipUrl = `${baseUrl}/index.php/s/${token}/download?path=${encodeURIComponent(parentDir)}`;
+            // FIX: If path is root '/', do NOT add ?path= parameter.
+            let zipUrl = `${baseUrl}/index.php/s/${token}/download`;
+            if (parentDir && parentDir !== '/') {
+                zipUrl += `?path=${encodeURIComponent(parentDir)}`;
+            }
 
             console.log("Triggering Direct ZIP:", zipUrl);
 
@@ -245,12 +243,12 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         {isZipping ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                <span>Pripravljam ({zipProgress}%)</span>
+                                <span>{t.preparing_download} ({zipProgress}%)</span>
                             </>
                         ) : (
                             <>
                                 <Archive className="w-4 h-4" />
-                                <span>Prenesi Vse</span>
+                                <span>{t.download_all}</span>
                             </>
                         )}
                     </button>
@@ -261,14 +259,14 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                     <button
                         onClick={() => setViewMode('large')}
                         className={`p-2 rounded ${viewMode === 'large' ? 'bg-white text-black' : 'text-white/50 hover:text-white'} transition-colors`}
-                        title="Velik Pogled"
+                        title={t.view_large}
                     >
                         <div className="w-5 h-5 border-2 border-current rounded-sm" />
                     </button>
                     <button
                         onClick={() => setViewMode('grid')}
                         className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white text-black' : 'text-white/50 hover:text-white'} transition-colors`}
-                        title="Grid Pogled"
+                        title={t.view_grid}
                     >
                         <div className="w-5 h-5 grid grid-cols-2 gap-0.5">
                             <div className="bg-current rounded-[1px]" />
@@ -280,7 +278,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                     <button
                         onClick={() => setViewMode('compact')}
                         className={`p-2 rounded ${viewMode === 'compact' ? 'bg-white text-black' : 'text-white/50 hover:text-white'} transition-colors`}
-                        title="Kompakten Pogled"
+                        title={t.view_compact}
                     >
                         <div className="w-5 h-5 grid grid-cols-3 gap-0.5">
                             {[...Array(9)].map((_, i) => (
@@ -462,7 +460,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white/80 hover:text-white transition-colors uppercase tracking-widest text-xs py-3 px-6 border border-white/10 hover:border-white/30 rounded-full hover:bg-black/70 font-dm shadow-lg"
                                     >
                                         <Download className="w-4 h-4" />
-                                        PRENESI
+                                        {t.download_single}
                                     </button>
                                 </motion.div>
                             )}
@@ -490,8 +488,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="space-y-2 text-center">
-                                <h3 className="text-[28px] font-bold uppercase tracking-wide text-white font-sans">Prenos Fotografij</h3>
-                                <p className="text-[15px] text-white/60 font-dm leading-relaxed">Prosim, vnesite vaš e-poštni naslov za nadaljevanje prenosa.</p>
+                                <h3 className="text-[28px] font-bold uppercase tracking-wide text-white font-sans">{t.download_photos}</h3>
+                                <p className="text-[15px] text-white/60 font-dm leading-relaxed">{t.enter_email_desc}</p>
                             </div>
 
                             <form onSubmit={handleEmailSubmit} className="space-y-4">
@@ -500,7 +498,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         type="email"
                                         required
                                         ref={emailInputRef}
-                                        placeholder="vas@email.com"
+                                        placeholder={t.email_placeholder}
                                         className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
                                     />
                                 </div>
@@ -509,7 +507,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Check className="w-4 h-4" />
-                                    Potrdi in Prenesi
+                                    {t.confirm_and_download}
                                 </button>
                             </form>
                         </motion.div>
