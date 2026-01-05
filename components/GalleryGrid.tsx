@@ -34,15 +34,7 @@ const slideVariants = {
 
 export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true, lang = 'sl' }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean, lang?: Language }) {
     const t = getTranslation(lang);
-    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-    const [direction, setDirection] = useState(0);
-    const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
-    const [isZipping, setIsZipping] = useState(false);
-    const [zipProgress, setZipProgress] = useState(0);
-
-    // Image Loading State
-    const [isImageLoading, setIsImageLoading] = useState(true);
-    const [loadingProgress, setLoadingProgress] = useState(0);
+    const [downloadReadyUrl, setDownloadReadyUrl] = useState<string | null>(null);
 
     // Reset loading state on photo change
     useEffect(() => {
@@ -81,17 +73,28 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (email && email.includes("@")) {
             setUserEmail(email);
             localStorage.setItem("gallery_user_email", email);
-            setShowEmailModal(false);
+            // Don't close modal yet if it's a batch download (checked via pendingDownload wrapping performDownloadAll)
+            // Actually performDownloadAll is passed as callback.
             if (pendingDownload) {
                 pendingDownload(email);
                 setPendingDownload(null);
+                // NOTE: performDownloadAll will handle modal closing or state update
+            } else {
+                setShowEmailModal(false);
             }
         }
     };
 
     const requireEmail = (callback: (email: string) => void) => {
         if (userEmail) {
-            callback(userEmail);
+            // Check if this is the batch download callback
+            if (callback === performDownloadAll) {
+                // Open modal anyway to show the "Download Ready" button
+                setShowEmailModal(true);
+                callback(userEmail);
+            } else {
+                callback(userEmail);
+            }
         } else {
             setPendingDownload(() => callback);
             setShowEmailModal(true);
@@ -102,93 +105,64 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (photos.length === 0) return;
 
         try {
-            // Fire and forget logging (don't await) to preserve User Gesture for mobile browsers
+            // Show loading state
+            setIsZipping(true);
+            setZipProgress(10);
+
+            // Fire and forget logging
             recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
             // Extract Token and Path from the first photo
-            // URL format: .../publicpreview/TOKEN?file=/Path/To/Image.jpg...
             const sampleUrl = resolveNextcloudUrl(photos[0].src);
 
-            if (!sampleUrl) {
-                throw new Error("Invalid image URL (Empty)");
-            }
+            if (!sampleUrl) throw new Error("Invalid image URL (Empty)");
 
             let urlObj: URL;
             try {
-                // Determine base for relative URLs just in case
                 urlObj = new URL(sampleUrl, window.location.href);
             } catch (e) {
                 throw new Error(`Invalid URL format: ${sampleUrl}`);
             }
 
-            // Extract Token
-            // Expected: .../publicpreview/[token]
             const match = sampleUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
             if (!match) throw new Error("Could not extract token from URL");
             const token = match[1];
-
-            // Extract Base URL
             const baseUrl = urlObj.origin;
-
-            // file param: /ShareName/Full/Image.jpg
             const fileParam = urlObj.searchParams.get("file");
             if (!fileParam) throw new Error("Could not extract file path");
 
-            // Extract Parent Directory from Relative Path
-            // e.g. /Full/Image.jpg -> /Full
             const lastSlash = fileParam.lastIndexOf('/');
             let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
 
-            // INTELLIGENT PATH SWAP (DISABLED FOR STABILITY)
-            // Goal: Swapping 'Web' to 'Full' caused "Zero KB" errors on mobile (likely path mismatches).
-            // Strategy: We now download the SHARE ROOT. This guarantees a valid ZIP file.
-            // It will contain the "Full" folder inside it if it exists.
+            // INTELLIGENT PATH SWAP (RESTORED):
+            // Goal: Swap 'Web' to 'Full' to ensure high quality (if explicitly present).
+
+            // 1. If currently pointing to Web, switch to Full
+            if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
+                parentDir = parentDir.replace(/web/i, 'Full');
+            }
+
+            // Normalize slashes
+            parentDir = parentDir.replace(/\/\//g, '/');
 
             // Construct Direct ZIP URL
-            // https://[server]/index.php/s/[token]/download
-            const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
-
-            /*
             let zipUrl = `${baseUrl}/index.php/s/${token}/download`;
             if (parentDir && parentDir !== '/') {
-                 zipUrl += `?path=${encodeURIComponent(parentDir)}`;
+                zipUrl += `?path=${encodeURIComponent(parentDir)}`;
             }
-            */
 
-            console.log("Triggering Direct ZIP:", zipUrl);
+            console.log("Download Ready:", zipUrl);
 
-            // Close modal immediately
-            setShowEmailModal(false);
-
-            // Show loading state on the button (which is now visible)
-            setIsZipping(true);
-            setZipProgress(100); // Fake progress to show activity
-
-            // DOWNLOAD STRATEGY: WINDOW.LOCATION (With Delay)
-            // 1. Iframe was blocked (no response).
-            // 2. window.open was white screen (Zero KB).
-            // 3. window.location is the standard way. 
-            // FIX: We wrap in setTimeout to allow React to finish its update cycle (modal closing) 
-            // before the browser takes over navigation. This prevents the "Application Error" race condition.
-
-            setTimeout(() => {
-                window.location.href = zipUrl;
-                // Reset loading state after a few seconds
-                setTimeout(() => setIsZipping(false), 3000);
-            }, 500);
-
-            /* 
-            const link = document.createElement('a');
-            link.href = zipUrl;
-            link.setAttribute('download', `${galleryTitle}.zip`); // Hint to browser
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            */
+            // TWO-STEP DOWNLOAD STRATEGY:
+            // Instead of auto-triggering (which fails on mobile), we present a button.
+            setDownloadReadyUrl(zipUrl);
+            setZipProgress(100);
+            setIsZipping(false);
 
         } catch (error) {
             console.error("Direct ZIP failed:", error);
-            // Show alert to user instead of crashing
+            setIsZipping(false);
+            setShowEmailModal(false);
             alert(`Napaka pri pripravi povezave za prenos: ${error instanceof Error ? error.message : "Neznana napaka"}`);
         }
     };
@@ -203,6 +177,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             const directUrl = resolveNextcloudUrl(selectedPhoto.src);
             await recordDownload(currentEmail, galleryTitle, selectedPhoto.id, selectedPhoto.src, filename);
             downloadImage(directUrl, filename);
+            setShowEmailModal(false); // Close modal for single downloads
         }
     };
 
@@ -211,6 +186,14 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         e.stopPropagation();
         requireEmail(performSingleDownload);
     };
+
+    // Cleanup download ready state when modal closes
+    useEffect(() => {
+        if (!showEmailModal) {
+            setDownloadReadyUrl(null);
+            setIsZipping(false);
+        }
+    }, [showEmailModal]);
 
     // ... existing navigation logic ...
     const handleNext = useCallback((e?: React.MouseEvent) => {
@@ -512,28 +495,65 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="space-y-2 text-center">
-                                <h3 className="text-[28px] font-bold uppercase tracking-wide text-white font-sans">{t.download_photos}</h3>
-                                <p className="text-[15px] text-white/60 font-dm leading-relaxed">{t.enter_email_desc}</p>
+                                <h3 className="text-[28px] font-bold uppercase tracking-wide text-white font-sans">
+                                    {downloadReadyUrl ? (lang === 'en' ? "Ready to Download" : "Pripravljeno za prenos") : t.download_photos}
+                                </h3>
+                                <p className="text-[15px] text-white/60 font-dm leading-relaxed">
+                                    {downloadReadyUrl ? (lang === 'en' ? "Click the button below to start." : "Kliknite gumb spodaj za začetek prenosa.") : t.enter_email_desc}
+                                </p>
                             </div>
 
-                            <form onSubmit={handleEmailSubmit} className="space-y-4">
-                                <div>
-                                    <input
-                                        type="email"
-                                        required
-                                        ref={emailInputRef}
-                                        placeholder={t.email_placeholder}
-                                        className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
-                                    />
+                            {downloadReadyUrl ? (
+                                <div className="space-y-4">
+                                    <a
+                                        href={downloadReadyUrl}
+                                        onClick={() => {
+                                            // Give it a moment to register the click before closing
+                                            setTimeout(() => {
+                                                setShowEmailModal(false);
+                                                setDownloadReadyUrl(null);
+                                            }, 1000);
+                                        }}
+                                        className="block w-full bg-green-600 text-white font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-center no-underline"
+                                    >
+                                        <Download className="w-5 h-5" />
+                                        {lang === 'en' ? "DOWNLOAD NOW" : "PRENESI ZDAJ"}
+                                    </a>
+                                    <button
+                                        onClick={() => {
+                                            setShowEmailModal(false);
+                                            setDownloadReadyUrl(null);
+                                        }}
+                                        className="block w-full text-white/50 hover:text-white uppercase tracking-widest text-xs py-2"
+                                    >
+                                        {lang === 'en' ? "Cancel" : "Prekliči"}
+                                    </button>
                                 </div>
-                                <button
-                                    type="submit"
-                                    className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Check className="w-4 h-4" />
-                                    {t.confirm_and_download}
-                                </button>
-                            </form>
+                            ) : (
+                                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                                    <div>
+                                        <input
+                                            type="email"
+                                            required
+                                            ref={emailInputRef}
+                                            placeholder={t.email_placeholder}
+                                            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isZipping}
+                                        className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isZipping ? (
+                                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                        ) : (
+                                            <Check className="w-4 h-4" />
+                                        )}
+                                        {t.confirm_and_download}
+                                    </button>
+                                </form>
+                            )}
                         </motion.div>
                     </motion.div>
                 )}
@@ -552,6 +572,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             )}
         </>
     );
+
 }
 
 function ScrollLock() {
