@@ -533,46 +533,80 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     </button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleEmailSubmit} className="space-y-4">
-                                    <div>
-                                        <input
-                                            type="email"
-                                            required
-                                            ref={emailInputRef}
-                                            placeholder={t.email_placeholder}
-                                            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
-                                        />
+                                {
+                                    downloadReadyUrl?(
+                                <div className = "space-y-4" >
+                                    <div className="bg-yellow-500/20 border border-yellow-500/50 p-4 rounded text-yellow-200 text-sm text-center mb-4">
+                                        {lang === 'en' ? "Optimization Blocked. Using Standard Download." : "Optimizacija blokirana. Uporabljam standardni prenos."}
                                     </div>
-                                    <button
-                                        type="submit"
-                                        disabled={isZipping}
-                                        className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                    <a
+                                        href={downloadReadyUrl}
+                                        target="_self"
+                                        className="block w-full bg-green-600 text-white font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-center no-underline"
                                     >
-                                        {isZipping ? (
-                                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                        ) : (
-                                            <Check className="w-4 h-4" />
-                                        )}
-                                        {t.confirm_and_download}
+                                        <Download className="w-5 h-5" />
+                                        {lang === 'en' ? "DOWNLOAD NOW" : "PRENESI ZDAJ"}
+                                    </a>
+
+                                    <button
+                                        onClick={() => {
+                                            setShowEmailModal(false);
+                                            setDownloadReadyUrl(null);
+                                        }}
+                                        className="block w-full text-white/50 hover:text-white uppercase tracking-widest text-xs py-2"
+                                    >
+                                        {lang === 'en' ? "Cancel" : "Prekliči"}
                                     </button>
-                                </form>
+                                </div>
+                        ) : (
+                        <form onSubmit={handleEmailSubmit} className="space-y-4">
+                            <div>
+                                <input
+                                    type="email"
+                                    required
+                                    ref={emailInputRef}
+                                    placeholder={t.email_placeholder}
+                                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={isZipping}
+                                className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isZipping ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                        <span className="text-xs ml-2">{lang === 'en' ? "Preparing..." : "Pripravljam..."} {zipProgress}%</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check className="w-4 h-4" />
+                                        <span>{t.confirm_and_download}</span>
+                                    </>
+                                )}
+                            </button>
+                        </form>
                             )}
-                        </motion.div>
+                            )}
+                    </motion.div>
                     </motion.div>
                 )}
-            </AnimatePresence>
+        </AnimatePresence >
 
-            {/* HIDDEN PRELOADER */}
-            {selectedPhoto && (
-                <div className="hidden">
-                    {nextPhoto && (
-                        <Image src={resolveNextcloudUrl(nextPhoto.previewSrc || nextPhoto.src)} alt="preload-next" width={1} height={1} priority quality={50} unoptimized />
-                    )}
-                    {prevPhoto && (
-                        <Image src={resolveNextcloudUrl(prevPhoto.previewSrc || prevPhoto.src)} alt="preload-prev" width={1} height={1} priority quality={50} unoptimized />
-                    )}
-                </div>
-            )}
+            {/* HIDDEN PRELOADER */ }
+    {
+        selectedPhoto && (
+            <div className="hidden">
+                {nextPhoto && (
+                    <Image src={resolveNextcloudUrl(nextPhoto.previewSrc || nextPhoto.src)} alt="preload-next" width={1} height={1} priority quality={50} unoptimized />
+                )}
+                {prevPhoto && (
+                    <Image src={resolveNextcloudUrl(prevPhoto.previewSrc || prevPhoto.src)} alt="preload-prev" width={1} height={1} priority quality={50} unoptimized />
+                )}
+            </div>
+        )
+    }
         </>
     );
 
