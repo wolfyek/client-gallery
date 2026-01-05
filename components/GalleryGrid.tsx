@@ -91,14 +91,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
     const requireEmail = (callback: (email: string) => void) => {
         if (userEmail) {
-            // Check if this is the batch download callback
-            if (callback === performDownloadAll) {
-                // Open modal anyway to show the "Download Ready" button
-                setShowEmailModal(true);
-                callback(userEmail);
-            } else {
-                callback(userEmail);
-            }
+            // If email is already known, just proceed immediately.
+            // No need to open modal for "Confirmation" if we are doing direct download.
+            callback(userEmail);
         } else {
             setPendingDownload(() => callback);
             setShowEmailModal(true);
@@ -226,7 +221,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     return (
         <>
             {/* Toolbar */}
-            <div className="sticky top-[80px] z-40 flex justify-between items-center px-4 md:px-8 pb-4 mix-blend-difference">
+            <div className="sticky top-[80px] z-40 flex justify-center md:justify-between items-center px-4 md:px-8 pb-4 mix-blend-difference">
 
                 {/* Download All Button - Only show if downloads allowed */}
                 {allowDownloads && (

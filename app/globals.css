@@ -10,7 +10,18 @@
     -ms-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
-    /* Prevent iOS long press on images */
+  }
+
+  /* Enforce DM Sans for body copy and subtitles per user request */
+  p,
+  h3,
+  h4,
+  h5,
+  h6,
+  li,
+  span,
+  a {
+    @apply font-dm;
   }
 }
 
