@@ -109,15 +109,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (photos.length === 0) return;
 
         try {
-            // 1. Mobile Safety: Close keyboard immediately
-            if (document.activeElement instanceof HTMLElement) {
-                document.activeElement.blur();
-            }
-
-            // Log the attempt
+            // Log the attempt (Fire and forget, no await to block UI)
             recordDownload(currentEmail, galleryTitle, "ZIP-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
-            // 1. Get the first photo URL to extract the Nextcloud token
+            // 1. Get the first photo URL
             const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
 
             // 2. Extract Token
@@ -128,32 +123,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 let origin = "";
 
                 try {
-                    // Robus URL parsing
-                    const urlObj = new URL(firstPhotoUrl, window.location.origin);
                     origin = firstPhotoUrl.startsWith("http") ? new URL(firstPhotoUrl).origin : window.location.origin;
-                    // If firstPhotoUrl is absolute, usage of new URL(firstPhotoUrl) gives its origin.
-                    // If it is relative (unlikely for resolved), we need base.
-                    if (firstPhotoUrl.startsWith("http")) {
-                        origin = new URL(firstPhotoUrl).origin;
-                    }
                 } catch (e) {
-                    console.error("URL Parse Fail", e);
-                    // Fallback to manual slice if needed, or just alert
                     throw new Error("Invalid Photo URL Structure");
                 }
 
                 // Canonical Nextcloud Share Download URL
-                // Format: https://{domain}/index.php/s/{token}/download
-                // Removing ?path=/ to rely on default behavior (Download Root)
                 const directZipUrl = `${origin}/index.php/s/${token}/download`;
 
-                // 3. Trigger Download via Anchor Tag
-                const link = document.createElement('a');
-                link.href = directZipUrl;
-                link.setAttribute('download', ''); // Standard HTML5 download attribute
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // 3. Direct Navigation (Safest for Mobile Safari)
+                // This replaces the current context with the download stream.
+                // Since it is an attachment, the page remains, but the browser handles the download.
+                window.location.href = directZipUrl;
 
                 // 4. Delay modal close
                 setTimeout(() => {
@@ -161,10 +142,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 }, 500);
 
             } else {
-                console.error("Could not extract Nextcloud token from URL:", firstPhotoUrl);
+                console.error("Could not extract Nextcloud token");
                 alert(lang === 'en' ?
-                    "Could not configure download. Please try individual photos." :
-                    "Napaka pri konfiguraciji prenosa. Prosimo poskusite posamične fotografije.");
+                    "Download configuration error." :
+                    "Napaka pri konfiguraciji prenosa.");
             }
 
         } catch (error) {
