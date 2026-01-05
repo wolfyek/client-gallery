@@ -6,8 +6,6 @@ import { type Photo } from "@/lib/data";
 import Image from "next/image";
 import { Download, X, ChevronLeft, ChevronRight, Archive, Check } from "lucide-react";
 import { downloadImage, resolveNextcloudUrl } from "@/lib/utils";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
 import { recordDownload } from "@/app/actions/logging";
 import { getTranslation, type Language } from "@/lib/i18n";
 
@@ -34,12 +32,9 @@ const slideVariants = {
 
 export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true, lang = 'sl' }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean, lang?: Language }) {
     const t = getTranslation(lang);
-    const [downloadReadyUrl, setDownloadReadyUrl] = useState<string | null>(null);
     const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
     const [direction, setDirection] = useState(0);
     const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
-    const [isZipping, setIsZipping] = useState(false);
-    const [zipProgress, setZipProgress] = useState(0);
 
     // Image Loading State
     const [isImageLoading, setIsImageLoading] = useState(true);
@@ -114,93 +109,36 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (photos.length === 0) return;
 
         try {
-            setIsZipping(true);
-            setZipProgress(0);
+            // Log the attempt
+            recordDownload(currentEmail, galleryTitle, "ZIP-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
-            // Log
-            recordDownload(currentEmail, galleryTitle, "ZIP-CLIENT-SIDE", "BATCH", `${galleryTitle}.zip`).catch(console.error);
+            // 1. Get the first photo URL to extract the Nextcloud token
+            const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
 
-            const zip = new JSZip();
-            const total = photos.length;
-            let completed = 0;
-            const poolLimit = 3;
-            let hasSystemicFailure = false;
+            // 2. Extract Token
+            // Expected format: .../publicpreview/{token}?file=...
+            const match = firstPhotoUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
 
-            for (let i = 0; i < photos.length; i += poolLimit) {
-                if (hasSystemicFailure) break;
+            if (match && match[1]) {
+                const token = match[1];
+                const urlObj = new URL(firstPhotoUrl);
+                // Construct the direct shared folder download URL
+                // Format: https://{domain}/index.php/s/{token}/download?path=/
+                const directZipUrl = `${urlObj.origin}/index.php/s/${token}/download?path=/`;
 
-                const batch = photos.slice(i, i + poolLimit);
-                await Promise.all(batch.map(async (photo) => {
-                    if (hasSystemicFailure) return;
-
-                    try {
-                        const directUrl = resolveNextcloudUrl(photo.src);
-                        if (!directUrl) throw new Error("No URL");
-
-                        // FAIL-FAST FETCH:
-                        // We do NOT use 'HEAD' probe anymore. We just try to get the image.
-                        // We use 'no-referrer' to avoid some blocking, but we keep default mode to be safe on PC.
-                        const response = await fetch(directUrl, {
-                            credentials: 'omit',
-                            referrerPolicy: 'no-referrer'
-                        });
-
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        const blob = await response.blob();
-                        const filename = photo.alt ? `${photo.alt}.jpg` : `photo-${photo.id}.jpg`;
-
-                        zip.file(filename, blob);
-                    } catch (e) {
-                        console.error(`Failed to download ${photo.id}`, e);
-
-                        // FAIL-FAST LOGIC:
-                        // If the FIRST batch fails, we assume the Network/CORS is blocking us entirely.
-                        // We abort immediately and switch to the Server-Side ZIP (Fallback).
-                        if (i === 0) {
-                            hasSystemicFailure = true;
-                        } else {
-                            // If a random image fails in the middle, just log it.
-                            zip.file(`error-${photo.id}.txt`, `Failed: ${e}`);
-                        }
-                    } finally {
-                        completed++;
-                        setZipProgress(Math.round((completed / total) * 90));
-                    }
-                }));
+                // 3. Trigger Download
+                window.location.href = directZipUrl;
+                setShowEmailModal(false);
+            } else {
+                console.error("Could not extract Nextcloud token from URL:", firstPhotoUrl);
+                alert(lang === 'en' ?
+                    "Could not configure download. Please try individual photos." :
+                    "Napaka pri konfiguraciji prenosa. Prosimo poskusite posamične fotografije.");
             }
-
-            // IF SYSTEMIC FAILURE DETECTED -> ENABLE FALLBACK
-            if (hasSystemicFailure) {
-                const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
-                console.warn("Systemic Download Failure Detected. Activating Fallback.");
-
-                const match = firstPhotoUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
-                if (match) {
-                    const token = match[1];
-                    const urlObj = new URL(firstPhotoUrl);
-                    const serverZipUrl = `${urlObj.origin}/index.php/s/${token}/download?path=/`;
-
-                    setDownloadReadyUrl(serverZipUrl);
-                    setIsZipping(false);
-                    alert(lang === 'en' ?
-                        "Direct download blocked. Switched to Standard Download." :
-                        "Direkten prenos blokiran. Preklapljam na standardni prenos.");
-                    return;
-                }
-            }
-
-            setZipProgress(95);
-            const content = await zip.generateAsync({ type: "blob" });
-            saveAs(content, `${galleryTitle}.zip`);
-
-            setZipProgress(100);
-            setIsZipping(false);
-            setShowEmailModal(false);
 
         } catch (error) {
-            console.error("Client ZIP failed:", error);
-            setIsZipping(false);
-            alert(`Napaka pri prenosu (Client-Zip): ${error instanceof Error ? error.message : "Neznana napaka"}`);
+            console.error("Download failed:", error);
+            alert(`Napaka: ${error instanceof Error ? error.message : "Neznana napaka"}`);
         }
     };
 
@@ -227,8 +165,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     // Cleanup download ready state when modal closes
     useEffect(() => {
         if (!showEmailModal) {
-            setDownloadReadyUrl(null);
-            setIsZipping(false);
+            // setDownloadReadyUrl(null); // Removed
+            // setIsZipping(false); // Removed
         }
     }, [showEmailModal]);
 
@@ -281,20 +219,10 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 {allowDownloads && (
                     <button
                         onClick={handleDownloadAll}
-                        disabled={isZipping}
                         className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg py-2 px-4 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-all uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-wait font-dm"
                     >
-                        {isZipping ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                <span>{t.preparing_download} ({zipProgress}%)</span>
-                            </>
-                        ) : (
-                            <>
-                                <Archive className="w-4 h-4" />
-                                <span>{t.download_all}</span>
-                            </>
-                        )}
+                        <Archive className="w-4 h-4" />
+                        <span>{t.download_all}</span>
                     </button>
                 )}
 
@@ -533,70 +461,31 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         >
                             <div className="space-y-2 text-center">
                                 <h3 className="text-[28px] font-bold uppercase tracking-wide text-white font-sans">
-                                    {downloadReadyUrl ? (lang === 'en' ? "Optimization Blocked" : "Optimizacija Blokirana") : t.download_photos}
+                                    {t.download_photos}
                                 </h3>
                                 <p className="text-[15px] text-white/60 font-dm leading-relaxed">
-                                    {downloadReadyUrl ?
-                                        (lang === 'en' ? "Network restrictions detected. Please use the standard download." : "Zaznane omrežne omejitve. Prosimo uporabite standardni prenos.") :
-                                        t.enter_email_desc
-                                    }
+                                    {t.enter_email_desc}
                                 </p>
                             </div>
 
-                            {downloadReadyUrl ? (
-                                <div className="space-y-4">
-                                    <div className="bg-yellow-500/20 border border-yellow-500/50 p-4 rounded text-yellow-200 text-sm text-center mb-4">
-                                        {lang === 'en' ? "Direct download blocked. Using server fallback." : "Direkten prenos blokiran. Uporabljam strežniško alternativo."}
-                                    </div>
-                                    <a
-                                        href={downloadReadyUrl}
-                                        target="_self"
-                                        className="block w-full bg-green-600 text-white font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-center no-underline"
-                                    >
-                                        <Download className="w-5 h-5" />
-                                        {lang === 'en' ? "DOWNLOAD NOW" : "PRENESI ZDAJ"}
-                                    </a>
-
-                                    <button
-                                        onClick={() => {
-                                            setShowEmailModal(false);
-                                            setDownloadReadyUrl(null);
-                                        }}
-                                        className="block w-full text-white/50 hover:text-white uppercase tracking-widest text-xs py-2"
-                                    >
-                                        {lang === 'en' ? "Cancel" : "Prekliči"}
-                                    </button>
+                            <form onSubmit={handleEmailSubmit} className="space-y-4">
+                                <div>
+                                    <input
+                                        type="email"
+                                        required
+                                        ref={emailInputRef}
+                                        placeholder={t.email_placeholder}
+                                        className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
+                                    />
                                 </div>
-                            ) : (
-                                <form onSubmit={handleEmailSubmit} className="space-y-4">
-                                    <div>
-                                        <input
-                                            type="email"
-                                            required
-                                            ref={emailInputRef}
-                                            placeholder={t.email_placeholder}
-                                            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
-                                        />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={isZipping}
-                                        className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                    >
-                                        {isZipping ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                                <span className="text-xs ml-2">{lang === 'en' ? "Preparing..." : "Pripravljam..."} {zipProgress}%</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Check className="w-4 h-4" />
-                                                <span>{t.confirm_and_download}</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </form>
-                            )}
+                                <button
+                                    type="submit"
+                                    className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    <span>{t.confirm_and_download}</span>
+                                </button>
+                            </form>
                         </motion.div>
                     </motion.div>
                 )}
