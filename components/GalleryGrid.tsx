@@ -139,23 +139,21 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             const lastSlash = fileParam.lastIndexOf('/');
             let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
 
-            // INTELLIGENT PATH SWAP:
-            // Goal: Swap 'Web' to 'Full' to ensure high quality (if explicitly present).
-
-            // 1. If currently pointing to Web, switch to Full
-            if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
-                parentDir = parentDir.replace(/web/i, 'Full');
-            }
-
-            // Normalize slashes
-            parentDir = parentDir.replace(/\/\//g, '/');
+            // INTELLIGENT PATH SWAP (DISABLED FOR STABILITY)
+            // Goal: Swapping 'Web' to 'Full' caused "Zero KB" errors on mobile (likely path mismatches).
+            // Strategy: We now download the SHARE ROOT. This guarantees a valid ZIP file.
+            // It will contain the "Full" folder inside it if it exists.
 
             // Construct Direct ZIP URL
-            // https://[server]/index.php/s/[token]/download?path=[parentDir]
+            // https://[server]/index.php/s/[token]/download
+            const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
+
+            /*
             let zipUrl = `${baseUrl}/index.php/s/${token}/download`;
             if (parentDir && parentDir !== '/') {
-                zipUrl += `?path=${encodeURIComponent(parentDir)}`;
+                 zipUrl += `?path=${encodeURIComponent(parentDir)}`;
             }
+            */
 
             console.log("Triggering Direct ZIP:", zipUrl);
 
