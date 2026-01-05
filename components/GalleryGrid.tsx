@@ -114,50 +114,64 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (photos.length === 0) return;
 
         try {
-            // Show loading state
             setIsZipping(true);
-            setZipProgress(10);
+            setZipProgress(0);
 
-            // Fire and forget logging
-            recordDownload(currentEmail, galleryTitle, "ZIP-ARCHIVE-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
+            // Log
+            recordDownload(currentEmail, galleryTitle, "ZIP-CLIENT-SIDE", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
-            // Extract Token and Path from the first photo
-            const sampleUrl = resolveNextcloudUrl(photos[0].src);
+            const zip = new JSZip();
+            const total = photos.length;
+            let completed = 0;
 
-            if (!sampleUrl) throw new Error("Invalid image URL (Empty)");
+            // Strategy: Client-Side Fetch
+            // This bypasses the Server-Side ZIP generation which is failing on mobile (Zero KB).
+            // It relies on direct CORS access to Nextcloud.
 
-            let urlObj: URL;
-            try {
-                urlObj = new URL(sampleUrl, window.location.href);
-            } catch (e) {
-                throw new Error(`Invalid URL format: ${sampleUrl}`);
+            // Concurrency Control (3 parallel requests)
+            const poolLimit = 3;
+
+            for (let i = 0; i < photos.length; i += poolLimit) {
+                const batch = photos.slice(i, i + poolLimit);
+                await Promise.all(batch.map(async (photo) => {
+                    try {
+                        // Resolve Direct URL (Port 440) to bypass Vercel
+                        const directUrl = resolveNextcloudUrl(photo.src);
+                        if (!directUrl) throw new Error("URL resolution failed");
+
+                        const response = await fetch(directUrl);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                        const blob = await response.blob();
+                        const filename = photo.alt ? `${photo.alt}.jpg` : `photo-${photo.id}.jpg`;
+
+                        zip.file(filename, blob);
+                    } catch (e) {
+                        console.error(`Failed to download ${photo.id}`, e);
+                        zip.file(`error-${photo.id}.txt`, `Failed: ${e}`);
+                    } finally {
+                        completed++;
+                        setZipProgress(Math.round((completed / total) * 90));
+                    }
+                }));
             }
 
-            const match = sampleUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
-            if (!match) throw new Error("Could not extract token from URL");
-            const token = match[1];
-            const baseUrl = urlObj.origin;
-            // FORCE ROOT DOWNLOAD (Fixes Zero KB)
-            // We ignore subdirectories and just download the entire shared folder.
-            // This is the only way to guarantee the ZIP path is valid on all devices.
-            const zipUrl = `${baseUrl}/index.php/s/${token}/download?path=/`;
+            setZipProgress(95);
+            // Generate ZIP
+            const content = await zip.generateAsync({ type: "blob" });
 
-            // TEMP DEBUG REMOVED
-            // alert(`Generated ZIP URL: ${zipUrl}`);
+            // Trigger Save
+            saveAs(content, `${galleryTitle}.zip`);
 
-            console.log("Download Ready:", zipUrl);
-
-            // TWO-STEP DOWNLOAD STRATEGY:
-            // Instead of auto-triggering (which fails on mobile), we present a button.
-            setDownloadReadyUrl(zipUrl);
             setZipProgress(100);
             setIsZipping(false);
+            setShowEmailModal(false);
 
         } catch (error) {
-            console.error("Direct ZIP failed:", error);
+            console.error("Client ZIP failed:", error);
             setIsZipping(false);
-            setShowEmailModal(false);
-            alert(`Napaka pri pripravi povezave za prenos: ${error instanceof Error ? error.message : "Neznana napaka"}`);
+            // Don't close modal, let them retry or see error
+            alert(`Napaka pri prenosu (Client-Zip): ${error instanceof Error ? error.message : "Neznana napaka"}`);
         }
     };
 
