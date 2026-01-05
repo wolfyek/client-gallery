@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react
 import { motion, AnimatePresence } from "framer-motion";
 import { type Photo } from "@/lib/data";
 import Image from "next/image";
-import { Download, X, ChevronLeft, ChevronRight, Archive, Check, Copy } from "lucide-react";
+import { Download, X, ChevronLeft, ChevronRight, Archive, Check } from "lucide-react";
 import { downloadImage, resolveNextcloudUrl } from "@/lib/utils";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -140,7 +140,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // FORCE ROOT DOWNLOAD (Fixes Zero KB)
             // We ignore subdirectories and just download the entire shared folder.
             // This is the only way to guarantee the ZIP path is valid on all devices.
-            const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
+            const zipUrl = `${baseUrl}/index.php/s/${token}/download?path=/`;
 
             // TEMP DEBUG REMOVED
             // alert(`Generated ZIP URL: ${zipUrl}`);
