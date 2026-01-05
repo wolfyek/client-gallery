@@ -137,28 +137,13 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             if (!match) throw new Error("Could not extract token from URL");
             const token = match[1];
             const baseUrl = urlObj.origin;
-            const fileParam = urlObj.searchParams.get("file");
-            if (!fileParam) throw new Error("Could not extract file path");
+            // FORCE ROOT DOWNLOAD (Fixes Zero KB)
+            // We ignore subdirectories and just download the entire shared folder.
+            // This is the only way to guarantee the ZIP path is valid on all devices.
+            const zipUrl = `${baseUrl}/index.php/s/${token}/download`;
 
-            const lastSlash = fileParam.lastIndexOf('/');
-            let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
-
-            // INTELLIGENT PATH SWAP (RESTORED):
-            // Goal: Swap 'Web' to 'Full' to ensure high quality (if explicitly present).
-
-            // 1. If currently pointing to Web, switch to Full
-            if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
-                parentDir = parentDir.replace(/web/i, 'Full');
-            }
-
-            // Normalize slashes
-            parentDir = parentDir.replace(/\/\//g, '/');
-
-            // Construct Direct ZIP URL
-            let zipUrl = `${baseUrl}/index.php/s/${token}/download`;
-            if (parentDir && parentDir !== '/') {
-                zipUrl += `?path=${encodeURIComponent(parentDir)}`;
-            }
+            // DEPRECATED LOGIC REMOVED
+            // No ?path= parameter is sent.
 
             console.log("Download Ready:", zipUrl);
 

@@ -42,6 +42,11 @@ export async function downloadImage(url: string, filename: string) {
         console.warn("Direct fetch download failed (CORS?), falling back to navigation.", e);
         // Fallback: This might open in new tab if it's an image, but it's the best we can do if Cross-Origin is blocked.
         // We add 'download' attribute to URL if possible or rely on headers.
+        // FINAL GUARD: Don't navigate to proxy URL to save bandwidth
+        if (targetUrl.startsWith("/api/proxy")) {
+            alert("Prenos ni mogoč (Varnostna omejitev pasovne širine).");
+            return;
+        }
         window.location.href = targetUrl;
     }
 }
@@ -71,7 +76,9 @@ export function resolveNextcloudUrl(url: string | undefined): string {
         console.error("Failed to resolve Nextcloud URL", e);
     }
 
-    return url;
+    // CRITICAL: If resolution failed for a proxy URL, preventing leaking bandwidth.
+    console.warn("Resolution failed for proxy URL, returning empty:", url);
+    return "";
 }
 
 
