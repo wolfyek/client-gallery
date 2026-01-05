@@ -139,15 +139,16 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             const lastSlash = fileParam.lastIndexOf('/');
             let parentDir = lastSlash > 0 ? fileParam.substring(0, lastSlash) : '/';
 
-            // INTELLIGENT PATH SWAP:
+            // INTELLIGENT PATH SWAP (DISABLED FOR DEBUGGING/STABILITY)
             // Goal: Swapping 'Web' to 'Full' to ensure high quality (if explicitly present).
             // But if it is already root '/', assume Flat Gallery and do NOT force '/Full'.
 
+            /*
             // 1. If currently pointing to Web, switch to Full
             if (parentDir.match(/\/web$/i) || parentDir.match(/\/web\//i)) {
                 parentDir = parentDir.replace(/web/i, 'Full');
             }
-            // 2. We removed the forced appending of /Full to support flat galleries.
+            */
 
             // Normalize slashes
             parentDir = parentDir.replace(/\/\//g, '/');
@@ -165,6 +166,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
             // Close modal immediately
             setShowEmailModal(false);
+
+            // DEBUG ALERT
+            alert(`DEBUG: Trying to download ZIP\nURL: ${zipUrl}`);
 
             // Trigger Direct Download via Window Location
             // We use window.location.href instead of anchor click to avoid potential mobile browser issues with detached elements
