@@ -109,6 +109,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
         if (photos.length === 0) return;
 
         try {
+            // 1. Mobile Safety: Close keyboard immediately
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+            }
+
             // Log the attempt
             recordDownload(currentEmail, galleryTitle, "ZIP-DIRECT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
@@ -126,9 +131,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                 // Format: https://{domain}/index.php/s/{token}/download?path=/
                 const directZipUrl = `${urlObj.origin}/index.php/s/${token}/download?path=/`;
 
-                // 3. Trigger Download
-                window.location.href = directZipUrl;
-                setShowEmailModal(false);
+                // 3. Trigger Download via Anchor Tag (Safer than window.location)
+                const link = document.createElement('a');
+                link.href = directZipUrl;
+                link.download = `${galleryTitle}.zip`; // Hint only
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // 4. Delay modal close to prevent layout thrashing/crashes on mobile
+                setTimeout(() => {
+                    setShowEmailModal(false);
+                }, 500);
             } else {
                 console.error("Could not extract Nextcloud token from URL:", firstPhotoUrl);
                 alert(lang === 'en' ?
