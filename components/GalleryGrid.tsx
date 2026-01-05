@@ -35,6 +35,15 @@ const slideVariants = {
 export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true, lang = 'sl' }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean, lang?: Language }) {
     const t = getTranslation(lang);
     const [downloadReadyUrl, setDownloadReadyUrl] = useState<string | null>(null);
+    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+    const [direction, setDirection] = useState(0);
+    const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
+    const [isZipping, setIsZipping] = useState(false);
+    const [zipProgress, setZipProgress] = useState(0);
+
+    // Image Loading State
+    const [isImageLoading, setIsImageLoading] = useState(true);
+    const [loadingProgress, setLoadingProgress] = useState(0);
 
     // Reset loading state on photo change
     useEffect(() => {
