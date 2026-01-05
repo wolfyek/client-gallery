@@ -9,8 +9,24 @@ import { formatSlovenianDate } from "@/lib/utils";
 
 export const dynamic = 'force-dynamic';
 
-export default async function LogsPage() {
+import { Button } from "@/components/ui/button";
+
+export default async function LogsPage({ searchParams }: { searchParams: { page?: string } }) {
     const logs = await getLogs();
+
+    // Pagination Logic
+    const currentPage = Number(searchParams.page) || 1;
+    const itemsPerPage = 10;
+
+    // Calculate totals based on the larger list (usually activity logs are more numerous)
+    // Or we paginate them independently? Using single page param for simplicity as requested "on one page".
+    const maxItems = Math.max(logs.downloads.length, logs.activity.length);
+    const totalPages = Math.ceil(maxItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    const visibleDownloads = logs.downloads.slice(startIndex, endIndex);
+    const visibleActivity = logs.activity.slice(startIndex, endIndex);
 
     return (
         <main className="min-h-screen bg-[#121212] text-white p-8">
@@ -50,12 +66,14 @@ export default async function LogsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {logs.downloads.length === 0 ? (
+                                    {visibleDownloads.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-white/30 italic font-dm">Ni zabeleženih prenosov.</td>
+                                            <td colSpan={5} className="p-8 text-center text-white/30 italic font-dm">
+                                                {logs.downloads.length === 0 ? "Ni zabeleženih prenosov." : "Ni prenosov na tej strani."}
+                                            </td>
                                         </tr>
                                     ) : (
-                                        logs.downloads.map((log) => (
+                                        visibleDownloads.map((log) => (
                                             <tr key={log.id} className="hover:bg-white/5 transition-colors group">
                                                 <td className="p-4 font-medium text-white">{log.email}</td>
                                                 <td className="p-4">
@@ -107,12 +125,14 @@ export default async function LogsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {logs.activity.length === 0 ? (
+                                {visibleActivity.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="p-8 text-center text-white/30 italic font-dm">Ni zabeleženih aktivnosti.</td>
+                                        <td colSpan={5} className="p-8 text-center text-white/30 italic font-dm">
+                                            {logs.activity.length === 0 ? "Ni zabeleženih aktivnosti." : "Ni aktivnosti na tej strani."}
+                                        </td>
                                     </tr>
                                 ) : (
-                                    logs.activity.map((log) => (
+                                    visibleActivity.map((log) => (
                                         <tr key={log.id} className="hover:bg-white/5 transition-colors group">
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider
@@ -140,6 +160,24 @@ export default async function LogsPage() {
                     </div>
                 </section>
 
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex justify-center gap-4 pt-4 pb-8">
+                        <Link href={`/admin/logs?page=${currentPage - 1}`} className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}>
+                            <Button variant="outline" disabled={currentPage <= 1} className="font-dm uppercase tracking-widest">
+                                Nazaj
+                            </Button>
+                        </Link>
+                        <span className="flex items-center text-sm font-dm text-white/50">
+                            Stran {currentPage} od {totalPages}
+                        </span>
+                        <Link href={`/admin/logs?page=${currentPage + 1}`} className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}>
+                            <Button variant="outline" disabled={currentPage >= totalPages} className="font-dm uppercase tracking-widest">
+                                Naprej
+                            </Button>
+                        </Link>
+                    </div>
+                )}
             </div>
         </main>
     );
