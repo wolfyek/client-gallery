@@ -311,6 +311,7 @@ export async function updateGallery(id: string, formData: FormData) {
     // Validate Slug Uniqueness (Exclude current gallery)
     if (slug) {
         const galleries = await getGalleries();
+        const conflict = galleries.find(g => (g.slug === slug || g.id === slug) && g.id !== id);
         if (conflict) {
             return { error: `Slug (povezava) "${slug}" je že v uporabi. Izberi drugega.` };
         }
@@ -381,11 +382,6 @@ export async function updateGalleryMetadata(
         password?: string;
         coverImage: string;
         category?: string;
-        title: string;
-        date: string;
-        password?: string;
-        coverImage: string;
-        category?: string;
         slug?: string;
         titleEn?: string;
         descriptionEn?: string;
@@ -424,7 +420,6 @@ export async function updateGalleryMetadata(
             date: data.date,
             password: data.password || undefined,
             coverImage: data.coverImage,
-            category: data.category,
             category: data.category,
             slug: data.slug || undefined,
             titleEn: data.titleEn || undefined,
