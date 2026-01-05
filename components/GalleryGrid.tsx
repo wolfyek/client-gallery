@@ -502,32 +502,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     <a
                                         href={downloadReadyUrl}
                                         target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={() => {
-                                            // Give it a moment to register the click before closing
-                                            setTimeout(() => {
-                                                setShowEmailModal(false);
-                                                setDownloadReadyUrl(null);
-                                            }, 1000);
-                                        }}
                                         className="block w-full bg-green-600 text-white font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-center no-underline"
                                     >
                                         <Download className="w-5 h-5" />
                                         {lang === 'en' ? "DOWNLOAD NOW" : "PRENESI ZDAJ"}
                                     </a>
-
-                                    <button
-                                        onClick={() => {
-                                            if (downloadReadyUrl) {
-                                                navigator.clipboard.writeText(downloadReadyUrl);
-                                                alert(lang === 'en' ? "Link copied!" : "Povezava kopirana!");
-                                            }
-                                        }}
-                                        className="block w-full text-white/50 hover:text-white uppercase tracking-widest text-xs py-2 flex items-center justify-center gap-2"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        {lang === 'en' ? "Copy Link" : "Kopiraj povezavo"}
-                                    </button>
 
                                     <button
                                         onClick={() => {
