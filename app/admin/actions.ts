@@ -226,6 +226,9 @@ export async function createGallery(formData: FormData) {
     const coverImage = formData.get("coverImage") as string;
     const category = formData.get("category") as string;
     const slug = formData.get("slug") as string;
+    const titleEn = formData.get("titleEn") as string;
+    const descriptionEn = formData.get("descriptionEn") as string;
+    const slugEn = formData.get("slugEn") as string;
     const downloadable = formData.get("downloadable") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -241,6 +244,14 @@ export async function createGallery(formData: FormData) {
         const conflict = galleries.find(g => g.slug === slug || g.id === slug);
         if (conflict) {
             return { error: `Slug (povezava) "${slug}" je že v uporabi. Izberi drugega.` };
+        }
+    }
+
+    // Validate English Slug Uniqueness
+    if (slugEn) {
+        const conflict = galleries.find(g => g.slugEn === slugEn);
+        if (conflict) {
+            return { error: `Angleški Slug "${slugEn}" je že v uporabi.` };
         }
     }
 
@@ -262,6 +273,9 @@ export async function createGallery(formData: FormData) {
         coverImage,
         category,
         slug: slug || undefined, // Save slug
+        titleEn: titleEn || undefined,
+        descriptionEn: descriptionEn || undefined,
+        slugEn: slugEn || undefined,
         downloadable,
         photos
     };
@@ -297,9 +311,17 @@ export async function updateGallery(id: string, formData: FormData) {
     // Validate Slug Uniqueness (Exclude current gallery)
     if (slug) {
         const galleries = await getGalleries();
-        const conflict = galleries.find(g => (g.slug === slug || g.id === slug) && g.id !== id);
         if (conflict) {
             return { error: `Slug (povezava) "${slug}" je že v uporabi. Izberi drugega.` };
+        }
+    }
+
+    // Validate English Slug Uniqueness (Exclude current gallery)
+    if (slugEn) {
+        const galleries = await getGalleries();
+        const conflict = galleries.find(g => (g.slugEn === slugEn) && g.id !== id);
+        if (conflict) {
+            return { error: `Angleški Slug "${slugEn}" je že v uporabi.` };
         }
     }
 
@@ -327,6 +349,9 @@ export async function updateGallery(id: string, formData: FormData) {
         coverImage,
         category,
         slug: slug || undefined, // Update slug
+        titleEn: titleEn || undefined,
+        descriptionEn: descriptionEn || undefined,
+        slugEn: slugEn || undefined,
         downloadable,
         photos
     };
@@ -356,7 +381,15 @@ export async function updateGalleryMetadata(
         password?: string;
         coverImage: string;
         category?: string;
+        title: string;
+        date: string;
+        password?: string;
+        coverImage: string;
+        category?: string;
         slug?: string;
+        titleEn?: string;
+        descriptionEn?: string;
+        slugEn?: string;
         downloadable: boolean;
         description?: string;
     }
@@ -377,6 +410,14 @@ export async function updateGalleryMetadata(
             }
         }
 
+        if (data.slugEn) {
+            const galleries = await getGalleries();
+            const conflict = galleries.find(g => (g.slugEn === data.slugEn) && g.id !== id);
+            if (conflict) {
+                return { success: false, error: `Angleški Slug "${data.slugEn}" je že v uporabi.` };
+            }
+        }
+
         const updated: Gallery = {
             ...existing,
             title: data.title,
@@ -384,7 +425,11 @@ export async function updateGalleryMetadata(
             password: data.password || undefined,
             coverImage: data.coverImage,
             category: data.category,
+            category: data.category,
             slug: data.slug || undefined,
+            titleEn: data.titleEn || undefined,
+            descriptionEn: data.descriptionEn || undefined,
+            slugEn: data.slugEn || undefined,
             downloadable: data.downloadable,
             description: data.description || "",
         };

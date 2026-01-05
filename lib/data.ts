@@ -17,5 +17,8 @@ export type Gallery = {
     downloadable?: boolean; // Defaults to true if undefined
     category?: string;
     slug?: string; // Custom URL slug
+    titleEn?: string; // English Title
+    descriptionEn?: string; // English Description
+    slugEn?: string; // English URL Slug
     photos: Photo[];
 };

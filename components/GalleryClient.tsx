@@ -20,6 +20,9 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
     const [isLocked, setIsLocked] = useState(!!gallery.password);
     const [isChecking, setIsChecking] = useState(true);
 
+    const displayTitle = (lang === 'en' && gallery.titleEn) ? gallery.titleEn : gallery.title;
+    const displayDesc = (lang === 'en' && gallery.descriptionEn) ? gallery.descriptionEn : gallery.description;
+
     useEffect(() => {
         if (!gallery.password) {
             setIsLocked(false);
@@ -59,7 +62,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
             <PasswordGate
                 isLocked={isLocked}
                 onUnlock={handleUnlock}
-                galleryTitle={gallery.title}
+                galleryTitle={displayTitle}
                 lang={lang}
             />
         );
@@ -84,11 +87,11 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
                 </span>
 
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tighter uppercase">
-                    {gallery.title}
+                    {displayTitle}
                 </h1>
 
                 <p className="text-lg md:text-xl text-white/70 font-light max-w-2xl mx-auto leading-relaxed font-dm">
-                    {gallery.description}
+                    {displayDesc}
                 </p>
 
                 <div className="h-px w-12 bg-white/20 mx-auto mt-8" />
@@ -97,7 +100,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
             {/* Gallery Content */}
             <GalleryGrid
                 photos={gallery.photos}
-                galleryTitle={gallery.title}
+                galleryTitle={displayTitle}
                 allowDownloads={gallery.downloadable ?? true}
                 lang={lang}
             />

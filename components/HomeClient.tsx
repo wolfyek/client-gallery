@@ -1,4 +1,8 @@
-"use client";
+// I need to view the file first.
+// Can I skip viewing? The user's metadata says it is open but I haven't viewed it in THIS turn.
+// I viewed it in previous session (lines 1-175).
+// I will just use `multi_replace` or view it to be safe.
+// Let's VIEW it first to avoid errors.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -16,7 +20,8 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
     const categories = ["VSE", "Koncert", "Poroka", "Krst", "Rojstni dan", "Šport", "Portret"];
 
     const filteredGalleries = initialGalleries.filter(g => {
-        const matchesQuery = g.title.toLowerCase().includes(query.toLowerCase());
+        const titleToMatch = (lang === 'en' && g.titleEn) ? g.titleEn : g.title;
+        const matchesQuery = titleToMatch.toLowerCase().includes(query.toLowerCase());
         const matchesCategory = category === "VSE" || g.category === category;
         return matchesQuery && matchesCategory;
     });
@@ -157,44 +162,52 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
 
                 {/* Galleries Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10 min-h-[50vh]">
-                    {filteredGalleries.map((gallery) => (
-                        <Link
-                            key={gallery.id}
-                            href={lang === 'en' ? `/eng/gallery/${gallery.id}` : `/galerija/${gallery.id}`}
-                            className="group block cursor-pointer"
-                        >
-                            {/* Image Container */}
-                            <div className="relative aspect-[3/2] w-full overflow-hidden bg-white/5 mb-3">
-                                <Image
-                                    src={resolveNextcloudUrl(gallery.coverImage)}
-                                    alt={gallery.title}
-                                    fill
-                                    unoptimized
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                                />
+                    {filteredGalleries.map((gallery) => {
+                        const displayTitle = (lang === 'en' && gallery.titleEn) ? gallery.titleEn : gallery.title;
+                        // Use valid URL part: slugEn -> slug -> id
+                        const linkId = lang === 'en'
+                            ? (gallery.slugEn || gallery.slug || gallery.id)
+                            : (gallery.slug || gallery.id);
 
-                                {/* Status Badge */}
-                                <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[12px] font-normal tracking-widest uppercase font-dm border border-black/10 shadow-lg backdrop-blur-sm
-                                    ${gallery.password
-                                        ? 'bg-red-500/90 text-white'
-                                        : 'bg-green-500/90 text-white'
-                                    }`}
-                                >
-                                    {gallery.password ? t.private : t.public}
+                        return (
+                            <Link
+                                key={gallery.id}
+                                href={lang === 'en' ? `/eng/gallery/${linkId}` : `/galerija/${linkId}`}
+                                className="group block cursor-pointer"
+                            >
+                                {/* Image Container */}
+                                <div className="relative aspect-[3/2] w-full overflow-hidden bg-white/5 mb-3">
+                                    <Image
+                                        src={resolveNextcloudUrl(gallery.coverImage)}
+                                        alt={displayTitle}
+                                        fill
+                                        unoptimized
+                                        className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                                    />
+
+                                    {/* Status Badge */}
+                                    <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[12px] font-normal tracking-widest uppercase font-dm border border-black/10 shadow-lg backdrop-blur-sm
+                                        ${gallery.password
+                                            ? 'bg-red-500/90 text-white'
+                                            : 'bg-green-500/90 text-white'
+                                        }`}
+                                    >
+                                        {gallery.password ? t.private : t.public}
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Meta Underneath */}
-                            <div className="flex flex-col items-center text-center space-y-2">
-                                <h2 className="text-[28px] font-bold tracking-wide uppercase font-sans leading-none pt-2">
-                                    {gallery.title}
-                                </h2>
-                                <p className="text-[15px] text-white/40 tracking-widest uppercase font-dm">
-                                    {formatSlovenianDate(gallery.date)}
-                                </p>
-                            </div>
-                        </Link>
-                    ))}
+                                {/* Meta Underneath */}
+                                <div className="flex flex-col items-center text-center space-y-2">
+                                    <h2 className="text-[28px] font-bold tracking-wide uppercase font-sans leading-none pt-2">
+                                        {displayTitle}
+                                    </h2>
+                                    <p className="text-[15px] text-white/40 tracking-widest uppercase font-dm">
+                                        {formatSlovenianDate(gallery.date)}
+                                    </p>
+                                </div>
+                            </Link>
+                        );
+                    })}
 
                     {filteredGalleries.length === 0 && (
                         <div className="col-span-full text-center py-20 text-white/30 uppercase tracking-widest">

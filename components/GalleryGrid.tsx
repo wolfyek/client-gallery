@@ -108,7 +108,18 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // Extract Token and Path from the first photo
             // URL format: .../publicpreview/TOKEN?file=/Path/To/Image.jpg...
             const sampleUrl = resolveNextcloudUrl(photos[0].src);
-            const urlObj = new URL(sampleUrl);
+
+            if (!sampleUrl) {
+                throw new Error("Invalid image URL (Empty)");
+            }
+
+            let urlObj: URL;
+            try {
+                // Determine base for relative URLs just in case
+                urlObj = new URL(sampleUrl, window.location.href);
+            } catch (e) {
+                throw new Error(`Invalid URL format: ${sampleUrl}`);
+            }
 
             // Extract Token
             // Expected: .../publicpreview/[token]
@@ -165,7 +176,8 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
 
         } catch (error) {
             console.error("Direct ZIP failed:", error);
-            alert("Napaka pri pripravi povezave za prenos. Prosim poskusite kasneje.");
+            // Show alert to user instead of crashing
+            alert(`Napaka pri pripravi povezave za prenos: ${error instanceof Error ? error.message : "Neznana napaka"}`);
         }
     };
 

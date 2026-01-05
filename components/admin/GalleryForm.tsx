@@ -75,6 +75,9 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     coverImage: formData.get("coverImage") as string,
                     category: formData.get("category") as string,
                     slug: formData.get("slug") as string, // Added missing slug
+                    titleEn: formData.get("titleEn") as string,
+                    descriptionEn: formData.get("descriptionEn") as string,
+                    slugEn: formData.get("slugEn") as string,
                     downloadable: downloadable,
                 });
                 if (result.success) {
@@ -158,6 +161,25 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                         className="bg-white/5 border-white/10 font-dm"
                     />
                     <p className="text-[10px] text-white/40 font-dm">Povezava bo: domain.com/galerija/vas-slug. Če prazno, se ustvari iz ID-ja.</p>
+                </div>
+
+                {/* English Metadata Section */}
+                <div className="col-span-1 md:col-span-2 border-t border-white/10 pt-4 mt-2 mb-2">
+                    <h4 className="text-sm font-bold uppercase text-white/70 mb-4 font-dm">Angleška Verzija (Opcijsko)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Angleški Naslov (EN Title)</label>
+                            <Input name="titleEn" defaultValue={gallery?.titleEn} placeholder="Album Name (EN)" className="bg-white/5 border-white/10 font-dm" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Angleški Slug / Povezava</label>
+                            <Input name="slugEn" defaultValue={gallery?.slugEn} placeholder="your-album-slug" className="bg-white/5 border-white/10 font-dm" />
+                        </div>
+                        <div className="col-span-1 md:col-span-2 space-y-2">
+                            <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Angleški Opis (EN Description)</label>
+                            <Input name="descriptionEn" defaultValue={gallery?.descriptionEn} placeholder="Short description..." className="bg-white/5 border-white/10 font-dm" />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="space-y-2">

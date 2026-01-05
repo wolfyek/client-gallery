@@ -113,7 +113,7 @@ async function ensureDataDir() {
 
 export async function getGallery(idOrSlug: string): Promise<Gallery | undefined> {
     const galleries = await getGalleries();
-    return galleries.find((g) => g.id === idOrSlug || g.slug === idOrSlug);
+    return galleries.find((g) => g.id === idOrSlug || g.slug === idOrSlug || g.slugEn === idOrSlug);
 }
 
 export async function saveGallery(gallery: Gallery) {
