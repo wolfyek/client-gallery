@@ -162,13 +162,27 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             // Close modal immediately
             setShowEmailModal(false);
 
-            // Trigger Direct Download via New Tab (Prevents Client App Crash)
-            // Using _blank isolates the download from the current app state, preventing "Application Error" crashes.
-            const newWindow = window.open(zipUrl, '_blank');
+            // DOWNLOAD STRATEGY: HIDDEN IFRAME
+            // 1. window.location.href -> Crashes React App on mobile ("Application Error") because it unloads the page.
+            // 2. window.open -> Opens blank white page, sometimes "Zero KB" if connection drops.
+            // 3. Iframe -> initiated download in background, keeps user on page, no cleanup crash.
 
-            // Fallback for aggressive popup blockers if needed
-            if (!newWindow) {
-                console.warn("Popup blocked, falling back to location.href");
+            try {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = zipUrl;
+                document.body.appendChild(iframe);
+
+                // Cleanup iframe after a generous timeout (2 minutes) to ensure request starts
+                // We don't need to wait for completion, just for the browser to hand off to Download Manager
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                }, 120000);
+            } catch (e) {
+                console.error("Iframe download failed", e);
+                // Fallback to location.href if DOM fails (unlikely)
                 window.location.href = zipUrl;
             }
 
