@@ -221,7 +221,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
     return (
         <>
             {/* Toolbar */}
-            <div className="sticky top-[80px] z-40 flex justify-center md:justify-between items-center px-4 md:px-8 pb-4 mix-blend-difference">
+            <div className="flex justify-center md:justify-between items-center px-4 md:px-8 pb-4">
 
                 {/* Download All Button - Only show if downloads allowed */}
                 {allowDownloads && (
