@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { formatSlovenianDate, resolveNextcloudUrl } from "@/lib/utils";
+import { formatDate, resolveNextcloudUrl } from "@/lib/utils";
 import { Search, Instagram, Globe } from "lucide-react";
 import { type Gallery } from "@/lib/data";
 import { getTranslation, type Language } from "@/lib/i18n";
@@ -14,6 +14,23 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
     const [category, setCategory] = useState("VSE");
 
     const categories = ["VSE", "Koncert", "Poroka", "Krst", "Rojstni dan", "Šport", "Portret"];
+
+    const categoryMap: Record<string, string> = {
+        "VSE": "ALL",
+        "Koncert": "Concert",
+        "Poroka": "Wedding",
+        "Krst": "Christening",
+        "Rojstni dan": "Birthday",
+        "Šport": "Sport",
+        "Portret": "Portrait"
+    };
+
+    const getCategoryLabel = (cat: string) => {
+        if (lang === 'en') {
+            return categoryMap[cat] || cat;
+        }
+        return cat;
+    };
 
     const filteredGalleries = initialGalleries.filter(g => {
         const titleToMatch = (lang === 'en' && g.titleEn) ? g.titleEn : g.title;
@@ -112,7 +129,7 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
                             >
                                 {categories.map((cat) => (
                                     <option key={cat} value={cat} className="bg-[#121212]">
-                                        {cat === "VSE" ? t.all_categories : cat}
+                                        {cat === "VSE" ? (lang === 'en' ? "ALL CATEGORIES" : t.all_categories) : getCategoryLabel(cat)}
                                     </option>
                                 ))}
                             </select>
@@ -198,7 +215,7 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
                                         {displayTitle}
                                     </h2>
                                     <p className="text-[15px] text-white/40 tracking-widest uppercase font-dm">
-                                        {formatSlovenianDate(gallery.date)}
+                                        {formatDate(gallery.date, lang)}
                                     </p>
                                 </div>
                             </Link>

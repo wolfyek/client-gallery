@@ -5,14 +5,17 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export function formatSlovenianDate(isoDate: string) {
+export function formatDate(isoDate: string, lang: 'sl' | 'en' = 'sl') {
     const date = new Date(isoDate);
-    return date.toLocaleDateString("sl-SI", {
+    const locale = lang === 'en' ? 'en-GB' : 'sl-SI'; // en-GB for Day Month Year format
+    return date.toLocaleDateString(locale, {
         day: "numeric",
         month: "long",
         year: "numeric",
     });
 }
+// Legacy alias to prevent breaking imports immediately (will replace usages)
+export const formatSlovenianDate = (d: string) => formatDate(d, 'sl');
 
 export async function downloadImage(url: string, filename: string) {
     const downloadUrl = resolveNextcloudDownloadUrl(url);

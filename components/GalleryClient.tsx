@@ -7,7 +7,7 @@ import PasswordGate from "@/components/PasswordGate";
 import GalleryGrid from "@/components/GalleryGrid";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { formatSlovenianDate } from "@/lib/utils"; // We'll keep Slovenian date format for now as requested
+import { formatDate } from "@/lib/utils"; // We'll keep Slovenian date format for now as requested
 import Image from "next/image";
 
 interface GalleryClientProps {
@@ -86,7 +86,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
             {/* Hero / Header Section */}
             <header className="pt-32 pb-16 px-6 text-center max-w-4xl mx-auto space-y-6">
                 <span className="text-xs tracking-[0.3em] uppercase text-white/60 font-dm">
-                    {formatSlovenianDate(gallery.date)}
+                    {formatDate(gallery.date, lang)}
                 </span>
 
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tighter uppercase">
