@@ -14,6 +14,7 @@ const nextConfig = {
             { protocol: "https", hostname: "nc.netmedia.si", },
             { protocol: "https", hostname: "www.netmedia.si", },
         ],
+        unoptimized: true, // FORCE DIET SODA (No Vercel Image Optimization Usage)
     },
 };
 export default nextConfig;
