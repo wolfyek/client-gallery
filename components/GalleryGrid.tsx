@@ -117,34 +117,64 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             setIsZipping(true);
             setZipProgress(0);
 
-            // Log
-            recordDownload(currentEmail, galleryTitle, "ZIP-CLIENT-SIDE", "BATCH", `${galleryTitle}.zip`).catch(console.error);
+            // Log Client-Side Attempt
+            recordDownload(currentEmail, galleryTitle, "ZIP-CLIENT-SIDE-ATTEMPT", "BATCH", `${galleryTitle}.zip`).catch(console.error);
 
+            // 1. SMART CHECK: CORS / DIRECT ACCESS
+            // We attempt to fetch the first image to see if the server allows us.
+            const firstPhotoUrl = resolveNextcloudUrl(photos[0].src);
+            if (!firstPhotoUrl) throw new Error("URL resolution failed");
+
+            try {
+                // Try to fetch headers. If this throws, we are blocked.
+                await fetch(firstPhotoUrl, {
+                    method: 'HEAD',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    referrerPolicy: 'no-referrer'
+                });
+            } catch (e) {
+                console.warn("Client-Zip blocked (CORS). activating Fallback.", e);
+
+                // FALLBACK: SERVER-SIDE ZIP
+                // Reconstruct the Server ZIP URL
+                const match = firstPhotoUrl.match(/\/publicpreview\/([a-zA-Z0-9]+)/);
+                if (match) {
+                    const token = match[1];
+                    const urlObj = new URL(firstPhotoUrl);
+                    const serverZipUrl = `${urlObj.origin}/index.php/s/${token}/download?path=/`;
+
+                    setDownloadReadyUrl(serverZipUrl);
+                    setIsZipping(false);
+                    alert(lang === 'en' ?
+                        "Direct download blocked by server. Switched to Standard Download." :
+                        "Direkten prenos blokiran s strani strežnika. Preklapljam na standardni prenos.");
+                    return;
+                }
+            }
+
+            // 2. CLIENT-SIDE ZIP (If Check Passed)
             const zip = new JSZip();
             const total = photos.length;
             let completed = 0;
-
-            // Strategy: Client-Side Fetch
-            // This bypasses the Server-Side ZIP generation which is failing on mobile (Zero KB).
-            // It relies on direct CORS access to Nextcloud.
-
-            // Concurrency Control (3 parallel requests)
             const poolLimit = 3;
 
             for (let i = 0; i < photos.length; i += poolLimit) {
                 const batch = photos.slice(i, i + poolLimit);
                 await Promise.all(batch.map(async (photo) => {
                     try {
-                        // Resolve Direct URL (Port 440) to bypass Vercel
                         const directUrl = resolveNextcloudUrl(photo.src);
-                        if (!directUrl) throw new Error("URL resolution failed");
+                        if (!directUrl) throw new Error("No URL");
 
-                        const response = await fetch(directUrl);
+                        const response = await fetch(directUrl, {
+                            mode: 'cors',
+                            credentials: 'omit',
+                            referrerPolicy: 'no-referrer'
+                        });
+
                         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
                         const blob = await response.blob();
                         const filename = photo.alt ? `${photo.alt}.jpg` : `photo-${photo.id}.jpg`;
-
                         zip.file(filename, blob);
                     } catch (e) {
                         console.error(`Failed to download ${photo.id}`, e);
@@ -157,10 +187,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             }
 
             setZipProgress(95);
-            // Generate ZIP
             const content = await zip.generateAsync({ type: "blob" });
-
-            // Trigger Save
             saveAs(content, `${galleryTitle}.zip`);
 
             setZipProgress(100);
@@ -168,10 +195,9 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             setShowEmailModal(false);
 
         } catch (error) {
-            console.error("Client ZIP failed:", error);
+            console.error("Download failed:", error);
             setIsZipping(false);
-            // Don't close modal, let them retry or see error
-            alert(`Napaka pri prenosu (Client-Zip): ${error instanceof Error ? error.message : "Neznana napaka"}`);
+            alert(`Napaka: ${error instanceof Error ? error.message : "Neznana napaka"}`);
         }
     };
 
@@ -504,40 +530,20 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                         >
                             <div className="space-y-2 text-center">
                                 <h3 className="text-[28px] font-bold uppercase tracking-wide text-white font-sans">
-                                    {downloadReadyUrl ? (lang === 'en' ? "Ready to Download" : "Pripravljeno za prenos") : t.download_photos}
+                                    {downloadReadyUrl ? (lang === 'en' ? "Optimization Blocked" : "Optimizacija Blokirana") : t.download_photos}
                                 </h3>
                                 <p className="text-[15px] text-white/60 font-dm leading-relaxed">
-                                    {downloadReadyUrl ? (lang === 'en' ? "Click the button below to start." : "Kliknite gumb spodaj za začetek prenosa.") : t.enter_email_desc}
+                                    {downloadReadyUrl ?
+                                        (lang === 'en' ? "Network restrictions detected. Please use the standard download." : "Zaznane omrežne omejitve. Prosimo uporabite standardni prenos.") :
+                                        t.enter_email_desc
+                                    }
                                 </p>
                             </div>
 
                             {downloadReadyUrl ? (
                                 <div className="space-y-4">
-                                    <a
-                                        href={downloadReadyUrl}
-                                        target="_self"
-                                        className="block w-full bg-green-600 text-white font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-center no-underline"
-                                    >
-                                        <Download className="w-5 h-5" />
-                                        {lang === 'en' ? "DOWNLOAD NOW" : "PRENESI ZDAJ"}
-                                    </a>
-
-                                    <button
-                                        onClick={() => {
-                                            setShowEmailModal(false);
-                                            setDownloadReadyUrl(null);
-                                        }}
-                                        className="block w-full text-white/50 hover:text-white uppercase tracking-widest text-xs py-2"
-                                    >
-                                        {lang === 'en' ? "Cancel" : "Prekliči"}
-                                    </button>
-                                </div>
-                            ) : (
-                                {
-                                    downloadReadyUrl?(
-                                <div className = "space-y-4" >
                                     <div className="bg-yellow-500/20 border border-yellow-500/50 p-4 rounded text-yellow-200 text-sm text-center mb-4">
-                                        {lang === 'en' ? "Optimization Blocked. Using Standard Download." : "Optimizacija blokirana. Uporabljam standardni prenos."}
+                                        {lang === 'en' ? "Direct download blocked. Using server fallback." : "Direkten prenos blokiran. Uporabljam strežniško alternativo."}
                                     </div>
                                     <a
                                         href={downloadReadyUrl}
@@ -558,65 +564,71 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         {lang === 'en' ? "Cancel" : "Prekliči"}
                                     </button>
                                 </div>
-                        ) : (
-                        <form onSubmit={handleEmailSubmit} className="space-y-4">
-                            <div>
-                                <input
-                                    type="email"
-                                    required
-                                    ref={emailInputRef}
-                                    placeholder={t.email_placeholder}
-                                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={isZipping}
-                                className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                            >
-                                {isZipping ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                                        <span className="text-xs ml-2">{lang === 'en' ? "Preparing..." : "Pripravljam..."} {zipProgress}%</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check className="w-4 h-4" />
-                                        <span>{t.confirm_and_download}</span>
-                                    </>
-                                )}
-                            </button>
-                        </form>
+                            ) : (
+                                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                                    <div>
+                                        <input
+                                            type="email"
+                                            required
+                                            ref={emailInputRef}
+                                            placeholder={t.email_placeholder}
+                                            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors text-center font-mono"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isZipping}
+                                        className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isZipping ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                                <span className="text-xs ml-2">{lang === 'en' ? "Preparing..." : "Pripravljam..."} {zipProgress}%</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Check className="w-4 h-4" />
+                                                <span>{t.confirm_and_download}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
                             )}
-                            )}
-                    </motion.div>
+                        </motion.div>
                     </motion.div>
                 )}
-        </AnimatePresence >
+            </AnimatePresence>
 
-            {/* HIDDEN PRELOADER */ }
-    {
-        selectedPhoto && (
-            <div className="hidden">
-                {nextPhoto && (
-                    <Image src={resolveNextcloudUrl(nextPhoto.previewSrc || nextPhoto.src)} alt="preload-next" width={1} height={1} priority quality={50} unoptimized />
-                )}
-                {prevPhoto && (
-                    <Image src={resolveNextcloudUrl(prevPhoto.previewSrc || prevPhoto.src)} alt="preload-prev" width={1} height={1} priority quality={50} unoptimized />
-                )}
-            </div>
-        )
-    }
+            {/* HIDDEN PRELOADER */}
+            {selectedPhoto && (
+                <div className="hidden">
+                    <Image
+                        src={resolveNextcloudUrl(nextPhoto.previewSrc || nextPhoto.src)}
+                        alt="preload next"
+                        width={100} height={100}
+                        unoptimized
+                        priority
+                    />
+                    <Image
+                        src={resolveNextcloudUrl(prevPhoto.previewSrc || prevPhoto.src)}
+                        alt="preload prev"
+                        width={100} height={100}
+                        unoptimized
+                        priority
+                    />
+                </div>
+            )}
         </>
     );
-
 }
 
+// Helper to lock body scroll
 function ScrollLock() {
     useLayoutEffect(() => {
+        const originalStyle = window.getComputedStyle(document.body).overflow;
         document.body.style.overflow = "hidden";
         return () => {
-            document.body.style.overflow = "";
+            document.body.style.overflow = originalStyle;
         };
     }, []);
     return null;
