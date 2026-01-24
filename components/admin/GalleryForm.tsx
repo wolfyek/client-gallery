@@ -18,23 +18,30 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [ncLink, setNcLink] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const [coverImage, setCoverImage] = useState(gallery?.coverImage || "");
-    const [coverImagePosition, setCoverImagePosition] = useState(gallery?.coverImagePosition || "center");
     const [downloadable, setDownloadable] = useState(gallery?.downloadable ?? true);
     const isEditing = !!gallery;
 
     const [hasPhotosChanged, setHasPhotosChanged] = useState(false);
-
-    const [isDragging, setIsDragging] = useState(false);
 
     const handleNextcloudImport = async () => {
         if (!ncLink) return;
         setIsImporting(true);
         try {
             const newPhotos = await importFromNextcloud(ncLink);
-            setPhotos([...photos, ...newPhotos]);
-            setHasPhotosChanged(true);
+
+            // Deduplicate based on filename (alt)
+            const existingNames = new Set(photos.map(p => p.alt));
+            const distinctNew = newPhotos.filter(p => !existingNames.has(p.alt));
+
+            if (distinctNew.length === 0) {
+                alert("Nobenih novih slik ni bilo najdenih (vse že obstajajo).");
+            } else {
+                setPhotos([...photos, ...distinctNew]);
+                setHasPhotosChanged(true);
+                alert(`Uspešno dodanih ${distinctNew.length} novih slik! (${newPhotos.length - distinctNew.length} duplikatov preskočenih)`);
+            }
+
             setNcLink("");
-            alert(`Uspešno uvoženih ${newPhotos.length} slik!`);
         } catch (e) {
             alert("Napaka pri uvozu. Preveri povezavo.");
             console.error(e);
@@ -43,35 +50,11 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         }
     };
 
-    const handleUpdateMetadata = async () => {
-        if (!ncLink) {
-            alert("Prilepi Nextcloud link v polje 'Uvozi', da osvežim podatke!");
-            return;
-        }
-        setIsImporting(true);
-        try {
-            const importedPhotos = await importFromNextcloud(ncLink);
-            let updatedCount = 0;
 
-            const updatedPhotos = photos.map(p => {
-                // Find matching photo in import (by filename)
-                const match = importedPhotos.find(ip => ip.alt === p.alt || ip.src.endsWith(p.alt));
-                if (match && match.dateTaken) {
-                    updatedCount++;
-                    return { ...p, dateTaken: match.dateTaken };
-                }
-                return p;
-            });
+    // REMOVED: Metadata update, Sorting, and Dragging logic as requested.
 
-            setPhotos(updatedPhotos);
-            setHasPhotosChanged(true);
-            alert(`Posodobljeni podatki za ${updatedCount} slik.`);
-        } catch (e) {
-            alert("Napaka pri posodabljanju.");
-        } finally {
-            setIsImporting(false);
-        }
-    };
+
+
 
     const handleAddPhoto = () => {
         if (!newPhotoUrl) return;
@@ -90,71 +73,6 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const removePhoto = (id: string) => {
         setPhotos(photos.filter(p => p.id !== id));
         setHasPhotosChanged(true);
-    };
-
-    const handleSortByDate = () => {
-        const sorted = [...photos].sort((a, b) => {
-            // 1. Metadata Date
-            const dateA = a.dateTaken ? new Date(a.dateTaken).getTime() : 0;
-            const dateB = b.dateTaken ? new Date(b.dateTaken).getTime() : 0;
-            if (dateA !== dateB) return dateA - dateB;
-
-            // 2. Regex Parse from Filename (YYYYMMDD or YYYY-MM-DD or YYYY_MM_DD)
-            // Matches 20231024, 2023-10-24, 2023_10_24
-            const dateRegex = /(20\d{2})[-_]?(\d{2})[-_]?(\d{2})/;
-            const matchA = a.alt.match(dateRegex);
-            const matchB = b.alt.match(dateRegex);
-
-            if (matchA && matchB) {
-                // Construct ISO strings roughly
-                const timeA = new Date(`${matchA[1]}-${matchA[2]}-${matchA[3]}`).getTime();
-                const timeB = new Date(`${matchB[1]}-${matchB[2]}-${matchB[3]}`).getTime();
-                if (timeA !== timeB) return timeA - timeB;
-            }
-
-            // 3. Fallback: Numeric aware filename sort
-            return a.alt.localeCompare(b.alt, undefined, { numeric: true, sensitivity: 'base' });
-        });
-        setPhotos(sorted);
-        setHasPhotosChanged(true);
-    };
-
-    const handleSortByName = () => {
-        const sorted = [...photos].sort((a, b) => {
-            return a.alt.localeCompare(b.alt, undefined, { numeric: true, sensitivity: 'base' });
-        });
-        setPhotos(sorted);
-        setHasPhotosChanged(true);
-    }
-
-    // Drag Logic for Cover Image
-    const handleCoverMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleCoverMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isDragging) return;
-
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-        const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-
-        setCoverImagePosition(`${Math.round(x)}% ${Math.round(y)}%`);
-    };
-
-    const handleCoverMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const handleCoverClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Fallback for simple clicks if not dragging
-        if (!isDragging) {
-            // existing logic? No, let's reuse mouse move logic logic but for click
-            // Actually, standardizing on "Click/Drag to set center" is easiest.
-            // Just calling move once acts as click.
-            handleCoverMouseMove(e);
-        }
     };
 
 
@@ -246,64 +164,17 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                         />
                     </div>
                     {coverImage && (
-                        <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden border border-white/20">
-                            <Image src={coverImage} fill alt="Cover" className="object-cover" unoptimized />
-                        </div>
-                    )}
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Pozicija Cover Slike (Klikni na sliko za nastavitev centra!)</label>
-                    <div className="flex gap-2">
-                        <Input
-                            name="coverImagePosition"
-                            value={coverImagePosition}
-                            onChange={(e) => setCoverImagePosition(e.target.value)}
-                            className="bg-white/5 border-white/10 font-dm font-mono text-xs"
-                            placeholder="50% 50%"
-                        />
-                    </div>
-
-                    {coverImage && (
                         <div className="mt-2">
-                            <p className="text-[10px] text-white/30 font-dm mb-1">
-                                Klikni in povleci (Drag), da premikaš sliko znotraj okvirja.
-                            </p>
                             <div
-                                className="relative w-full h-64 rounded overflow-hidden border border-white/20 cursor-move group touch-none"
-                                onMouseDown={handleCoverMouseDown}
-                                onMouseMove={handleCoverMouseMove}
-                                onMouseUp={handleCoverMouseUp}
-                                onMouseLeave={handleCoverMouseUp}
-                                onClick={handleCoverClick}
+                                className="relative w-full h-64 rounded overflow-hidden border border-white/20"
                             >
                                 <Image
                                     src={coverImage}
                                     fill
                                     alt="Cover Preview"
-                                    className="object-cover transition-none pointer-events-none select-none"
-                                    style={{ objectPosition: coverImagePosition }}
+                                    className="object-cover"
                                     unoptimized
                                 />
-
-                                {/* Grid overlay for better focus */}
-                                <div className="absolute inset-0 pointer-events-none opacity-20">
-                                    <div className="w-full h-full grid grid-cols-3 grid-rows-3">
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                        <div className="border border-white/30"></div>
-                                    </div>
-                                </div>
-
-                                <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur font-mono">
-                                    {coverImagePosition}
-                                </div>
                             </div>
                         </div>
                     )}
@@ -383,9 +254,6 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     <Button type="button" onClick={handleNextcloudImport} disabled={isImporting} className="bg-blue-600 hover:bg-blue-500 text-white min-w-[100px] font-dm">
                         {isImporting ? 'Nalagam...' : 'Uvozi'}
                     </Button>
-                    <Button type="button" onClick={handleUpdateMetadata} disabled={isImporting} className="bg-green-600 hover:bg-green-500 text-white font-dm" title="Refresh Dates/Metadata">
-                        <RefreshCw className={`w-4 h-4 ${isImporting ? 'animate-spin' : ''}`} />
-                    </Button>
                 </div>
                 <p className="text-[10px] text-white/30 font-dm">
                     Prilepi "Public Share Link" iz Nextcloud-a. Sistem bo avtomatsko poiskal vse slike.
@@ -406,17 +274,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
             {/* Photo Manager */}
             <div className="border-t border-white/10 pt-8 space-y-4">
-                <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-                    <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
-                    <div className="flex gap-2">
-                        <Button type="button" onClick={handleSortByDate} variant="outline" size="sm" className="bg-transparent border-white/20 text-white hover:bg-white/10 text-xs font-dm uppercase tracking-wider gap-2">
-                            <CalendarClock className="w-4 h-4" /> Uredi po datumu
-                        </Button>
-                        <Button type="button" onClick={handleSortByName} variant="outline" size="sm" className="bg-transparent border-white/20 text-white hover:bg-white/10 text-xs font-dm uppercase tracking-wider gap-2">
-                            <ArrowDownAZ className="w-4 h-4" /> Uredi po imenu
-                        </Button>
-                    </div>
-                </div>
+                <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
 
                 <div className="flex gap-2">
                     <Input
