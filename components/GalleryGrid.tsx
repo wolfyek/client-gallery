@@ -411,7 +411,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         alt={selectedPhoto.alt}
                                         width={selectedPhoto.width} // Provide intrinsic width
                                         height={selectedPhoto.height} // Provide intrinsic height
-                                        className="w-full h-auto rounded-lg shadow-2xl md:shadow-none md:rounded-none md:w-auto md:h-full md:object-contain max-h-[none] md:max-h-[calc(100vh-120px)]"
+                                        className="w-auto h-auto max-w-full max-h-[85vh] object-contain shadow-2xl"
                                         quality={90}
                                         priority
                                         unoptimized

@@ -10,6 +10,8 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Reorder } from "framer-motion";
 
+import { ArrowDownAZ, CalendarClock } from "lucide-react";
+
 export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [photos, setPhotos] = useState<Photo[]>(gallery?.photos || []);
     const [newPhotoUrl, setNewPhotoUrl] = useState("");
@@ -56,6 +58,42 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const removePhoto = (id: string) => {
         setPhotos(photos.filter(p => p.id !== id));
         setHasPhotosChanged(true); // Mark as changed
+    };
+
+    const handleSortByDate = () => {
+        const sorted = [...photos].sort((a, b) => {
+            // Priority: DateTaken metadata -> Filename (assuming sequential naming)
+            const dateA = a.dateTaken ? new Date(a.dateTaken).getTime() : 0;
+            const dateB = b.dateTaken ? new Date(b.dateTaken).getTime() : 0;
+
+            if (dateA && dateB) return dateA - dateB;
+
+            // Fallback to filename sorting (often correlates with date)
+            return a.alt.localeCompare(b.alt, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        setPhotos(sorted);
+        setHasPhotosChanged(true);
+    };
+
+    const handleSortByName = () => {
+        const sorted = [...photos].sort((a, b) => {
+            return a.alt.localeCompare(b.alt, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        setPhotos(sorted);
+        setHasPhotosChanged(true);
+    }
+
+    const handleCoverClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Visual positioning logic
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Round to nearest integer for cleanliness
+        const xPos = Math.round(x);
+        const yPos = Math.round(y);
+
+        setCoverImagePosition(`${xPos}% ${yPos}%`);
     };
 
 
@@ -154,33 +192,45 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Pozicija Cover Slike</label>
-                    <select
-                        name="coverImagePosition"
-                        value={coverImagePosition}
-                        onChange={(e) => setCoverImagePosition(e.target.value)}
-                        className="w-full h-10 px-3 rounded-md bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/20 font-dm appearance-none"
-                    >
-                        <option value="center" className="bg-[#121212]">Center (Privzeto)</option>
-                        <option value="top" className="bg-[#121212]">Zgoraj</option>
-                        <option value="bottom" className="bg-[#121212]">Spodaj</option>
-                        <option value="left" className="bg-[#121212]">Levo</option>
-                        <option value="right" className="bg-[#121212]">Desno</option>
-                        <option value="50% 20%" className="bg-[#121212]">Malo višje (50% 20%)</option>
-                    </select>
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Pozicija Cover Slike (Klikni na sliko za nastavitev centra!)</label>
+                    <div className="flex gap-2">
+                        <Input
+                            name="coverImagePosition"
+                            value={coverImagePosition}
+                            onChange={(e) => setCoverImagePosition(e.target.value)}
+                            className="bg-white/5 border-white/10 font-dm font-mono text-xs"
+                            placeholder="50% 50%"
+                        />
+                    </div>
+
                     {coverImage && (
                         <div className="mt-2">
-                            <p className="text-[10px] text-white/30 font-dm mb-1">Predogled:</p>
-                            <div className="relative w-full h-40 rounded overflow-hidden border border-white/20">
+                            <p className="text-[10px] text-white/30 font-dm mb-1">
+                                Klikni na sliko, da nastaviš točko fokusa (rdeča pika).
+                            </p>
+                            <div
+                                className="relative w-full h-64 rounded overflow-hidden border border-white/20 cursor-crosshair group"
+                                onClick={handleCoverClick}
+                            >
                                 <Image
                                     src={coverImage}
                                     fill
                                     alt="Cover Preview"
-                                    className="object-cover"
+                                    className="object-cover transition-opacity duration-200"
                                     style={{ objectPosition: coverImagePosition }}
                                     unoptimized
                                 />
+                                {/* Overlay crosshair for visual feedback of click location isn't really possible without inverse calculation, 
+                                    but we can show a Center Marker relative to the container based on position? 
+                                    Actually, object-position moves the image. 
+                                    Let's just show a static centered safe-zone or just reliance on the image moving.
+                                    Better: Show a small red dot representing the "Center" if we could traverse coordinate space, 
+                                    but object-position shifts the image content relative to the box. 
+                                    So if I click top-left (0% 0%), the top-left of the image aligns with top-left of box.
+                                */}
+                                <div className="absolute inset-0 border-2 border-white/0 group-hover:border-white/20 transition-all pointer-events-none" />
                             </div>
+                            <p className="text-[10px] text-white/30 mt-1 font-mono text-right">Točka: {coverImagePosition}</p>
                         </div>
                     )}
                 </div>
@@ -279,7 +329,17 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
             {/* Photo Manager */}
             <div className="border-t border-white/10 pt-8 space-y-4">
-                <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
+                <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                    <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
+                    <div className="flex gap-2">
+                        <Button type="button" onClick={handleSortByDate} variant="outline" size="sm" className="bg-transparent border-white/20 text-white hover:bg-white/10 text-xs font-dm uppercase tracking-wider gap-2">
+                            <CalendarClock className="w-4 h-4" /> Uredi po datumu
+                        </Button>
+                        <Button type="button" onClick={handleSortByName} variant="outline" size="sm" className="bg-transparent border-white/20 text-white hover:bg-white/10 text-xs font-dm uppercase tracking-wider gap-2">
+                            <ArrowDownAZ className="w-4 h-4" /> Uredi po imenu
+                        </Button>
+                    </div>
+                </div>
 
                 <div className="flex gap-2">
                     <Input
