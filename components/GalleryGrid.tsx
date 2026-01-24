@@ -406,20 +406,11 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                         </div>
                                     )}
 
-                                    <Image
+                                    <img
                                         src={resolveNextcloudUrl(selectedPhoto.previewSrc || selectedPhoto.src)}
                                         alt={selectedPhoto.alt}
-                                        width={selectedPhoto.width} // Provide intrinsic width
-                                        height={selectedPhoto.height} // Provide intrinsic height
-                                        className="w-auto h-auto max-w-full max-h-[85vh] object-contain shadow-2xl"
-                                        quality={90}
-                                        priority
-                                        unoptimized
-                                        onLoadStart={() => {
-                                            setIsImageLoading(true);
-                                            setLoadingProgress(10);
-                                        }}
-                                        onLoadingComplete={() => {
+                                        className="w-auto h-auto max-w-full max-h-[85vh] object-contain shadow-2xl block select-none"
+                                        onLoad={() => {
                                             setLoadingProgress(100);
                                             setTimeout(() => setIsImageLoading(false), 200);
                                         }}
