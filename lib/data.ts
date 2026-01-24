@@ -5,6 +5,7 @@ export type Photo = {
     height: number;
     alt: string;
     previewSrc?: string; // Optional URL for optimized web display
+    dateTaken?: string; // ISO string representing the capture date (or last modified)
 };
 
 export type Gallery = {
@@ -13,6 +14,7 @@ export type Gallery = {
     description?: string;
     date: string;
     coverImage: string;
+    coverImagePosition?: string; // CSS object-position value (e.g. 'center', 'top', '50% 20%')
     password?: string; // If undefined, it's public
     downloadable?: boolean; // Defaults to true if undefined
     category?: string;

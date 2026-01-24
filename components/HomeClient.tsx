@@ -196,6 +196,7 @@ export default function HomeClient({ initialGalleries, lang = 'sl' }: { initialG
                                         fill
                                         unoptimized
                                         className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                                        style={{ objectPosition: gallery.coverImagePosition || 'center' }}
                                     />
 
                                     {/* Status Badge */}

@@ -5,6 +5,7 @@ import { Gallery, Photo } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logActivity, deleteLog } from "@/lib/logs";
+import { XMLParser } from "fast-xml-parser";
 
 export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
     try {
@@ -25,11 +26,6 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             }
         }
 
-        // Logic adjustment: `tokenIndex` should point to the segment BEFORE the token
-        // In /s/[token], 's' is at i, token is at i+1.
-        // In .../files/[token], 'files' is at i, token is at i+1.
-
-        // Refined:
         let token = "";
 
         if (pathParts.includes('s')) {
@@ -42,23 +38,19 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
             throw new Error("Invalid Nextcloud Share URL. Must contain /s/[token] or be a WebDAV URL.");
         }
 
-        // Correct Base URL extraction (handling subdirectories)
+        // Correct Base URL extraction
         let baseUrl = "";
         const sIndex = shareUrl.indexOf('/s/' + token);
         if (sIndex !== -1) {
             baseUrl = shareUrl.substring(0, sIndex);
-            // Fix: Remove trailing /index.php if present (e.g. https://domain.com/index.php/s/...)
             if (baseUrl.endsWith("/index.php")) {
                 baseUrl = baseUrl.substring(0, baseUrl.length - "/index.php".length);
             }
         } else {
-            // Handle DAV URL: .../public.php/dav/files/[token]
-            // Base URL is typically before /public.php
             const publicIndex = shareUrl.indexOf('/public.php');
             if (publicIndex !== -1) {
                 baseUrl = shareUrl.substring(0, publicIndex);
             } else {
-                // Fallback: try to guess from origin?
                 baseUrl = url.origin;
             }
         }
@@ -85,16 +77,45 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
         const xmlText = await response.text();
 
-        // 3. Regex Parsing
-        const hrefRegex = /<([a-z0-9]+:)?href>([^<]+)<\/([a-z0-9]+:)?href>/gi;
+        // 3. XML Parsing with fast-xml-parser
+        const parser = new XMLParser({
+            ignoreAttributes: false,
+            attributeNamePrefix: ""
+        });
+        const parsed = parser.parse(xmlText);
 
-        let match;
-        const foundFiles: { path: string, filename: string, folder: string, proxyUrl: string }[] = [];
+        const foundFiles: { path: string, filename: string, folder: string, proxyUrl: string, lastMod: string }[] = [];
 
-        // Loop through all matches
-        while ((match = hrefRegex.exec(xmlText)) !== null) {
-            const href = match[2];
+        // Navigate structure: multistatus -> response (array or single object)
+        // Handle namespaced keys (d:multistatus) or standard keys
+        const multi = parsed['d:multistatus'] || parsed.multistatus;
+        const responses = multi?.['d:response'] || multi?.response;
+
+        const responseList = Array.isArray(responses) ? responses : (responses ? [responses] : []);
+
+        for (const resp of responseList) {
+            if (!resp) continue;
+
+            const href = resp['d:href'] || resp.href;
+            if (!href) continue;
+
             const decodedHref = decodeURIComponent(href);
+
+            // Extract 'getlastmodified'
+            let lastMod = "";
+            const propstatRaw = resp['d:propstat'] || resp.propstat;
+            const propstats = Array.isArray(propstatRaw) ? propstatRaw : [propstatRaw];
+
+            for (const stat of propstats) {
+                const prop = stat?.['d:prop'] || stat?.prop;
+                if (prop) {
+                    const lm = prop['d:getlastmodified'] || prop.getlastmodified;
+                    if (lm) {
+                        lastMod = lm;
+                        break;
+                    }
+                }
+            }
 
             // Handle relative path extraction
             let relativePath = decodedHref;
@@ -114,23 +135,18 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
 
             if (isImage) {
                 const parentFolder = pathParts[pathParts.length - 1];
-
-                // Direct Nextcloud URL Construction
-                // We want to store the Direct URL in the database to completely bypass Vercel functions
                 const cleanServer = baseUrl.replace(/\/$/, "");
                 const cleanPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
-                // Format: https://[server]/index.php/apps/files_sharing/publicpreview/[token]?file=[path]&x=1920&y=1080&a=true&scalingup=0
-                const directUrl = `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&x=1920&y=1080&a=true&scalingup=0`;
-
-                // We still use "proxyUrl" as the property name in this temp object to match the rest of the function logic,
-                // but the value is now the direct URL.
+                // IMPROVEMENT: Request larger dimensions (3000x3000) to ensure 16:10 or Portrait images aren't cropped/downscaled to 16:9
+                const directUrl = `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&x=3000&y=3000&a=true&scalingup=0`;
 
                 foundFiles.push({
                     path: relativePath,
                     filename: filename,
                     folder: parentFolder,
-                    proxyUrl: directUrl
+                    proxyUrl: directUrl,
+                    lastMod: lastMod
                 });
             }
         }
@@ -138,22 +154,9 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         console.log(`Found ${foundFiles.length} total images. Sorting into Web/Full...`);
 
         // 4. Pair "Full" and "Web" images
-        // Logic: Group by "basename" (canonical name).
-        // Rules:
-        // - Naming: "Image_Web.jpg" -> Base: "Image", Type: Web
-        // - Naming: "Image_Full.jpg" -> Base: "Image", Type: Full
-        // - Folder: "Web/Image.jpg"   -> Base: "Image", Type: Web
-        // - Default: "Image.jpg"      -> Base: "Image", Type: Full (unless a better Full exists?)
-
         const groups: { [key: string]: { full?: typeof foundFiles[0], web?: typeof foundFiles[0] } } = {};
 
         foundFiles.forEach(file => {
-            // Normalize filename to create a "key" for pairing
-            // Strategy: Remove "_web" and "_full" (case insensitive) from the name
-            // Example: "Concert_Full (1).jpg" -> "Concert (1)"
-            // Example: "Concert_Web (1).jpg" -> "Concert (1)"
-            // This preserves the (1) so duplicates don't merge into one generic entry
-
             const nameWithoutExt = file.filename.replace(/\.[^/.]+$/, "");
             const canonicalName = nameWithoutExt
                 .replace(/_web/gi, "")
@@ -161,16 +164,14 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
                 .trim()
                 .toLowerCase();
 
-            let type: 'full' | 'web' = 'full'; // Default assumption
+            let type: 'full' | 'web' = 'full';
 
-            // Detect Type
             const lowerName = nameWithoutExt.toLowerCase();
             if (lowerName.includes('_web') || (file.folder && file.folder.toLowerCase() === 'web')) {
                 type = 'web';
             } else if (lowerName.includes('_full') || (file.folder && file.folder.toLowerCase() === 'full')) {
                 type = 'full';
             }
-            // If neither logic hits, we treat it as 'full' (master), assuming it's a standalone high-res image
 
             if (!groups[canonicalName]) {
                 groups[canonicalName] = {};
@@ -188,28 +189,45 @@ export async function importFromNextcloud(shareUrl: string): Promise<Photo[]> {
         // Create Photo objects
         for (const basename in groups) {
             const group = groups[basename];
-
-            // Must have at least one version.
-            // If we have Full, use it as Main. If we only have Web, should we skip?
-            // Decision: If we only have Web, we treat it as Main (fallback), but ideally we want Full.
-            // If we have both, Full is Main, Web is Preview.
-
             const main = group.full || group.web;
             const preview = group.web;
 
             if (!main) continue;
 
+            // Parse Date
+            let dateTakenStr = main.lastMod; // "Tue, 24 Oct 2023..."
+
+            // Prefer Full image date if available, else Web
+            if (group.full && group.full.lastMod) dateTakenStr = group.full.lastMod;
+
+            let isoDate = "";
+            try {
+                if (dateTakenStr) {
+                    isoDate = new Date(dateTakenStr).toISOString();
+                }
+            } catch (e) {
+                console.warn("Failed to parse date:", dateTakenStr);
+            }
+
             photos.push({
                 id: Math.random().toString(36).substr(2, 9),
-                src: main.proxyUrl, // Download/HighRes URL
-                previewSrc: preview ? preview.proxyUrl : undefined, // Display URL (Web version if exists)
+                src: main.proxyUrl,
+                previewSrc: preview ? preview.proxyUrl : undefined,
                 width: 1920,
                 height: 1080,
-                alt: main.filename // Use original filename
+                alt: main.filename,
+                dateTaken: isoDate
             });
         }
 
-        console.log(`Result: ${photos.length} gallery items created.`);
+        // 5. SORT BY DATE (Earliest to Latest)
+        photos.sort((a, b) => {
+            if (!a.dateTaken) return 1;
+            if (!b.dateTaken) return -1;
+            return new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime();
+        });
+
+        console.log(`Result: ${photos.length} gallery items created (Sorted by Date).`);
         return photos;
 
     } catch (error) {
@@ -224,6 +242,7 @@ export async function createGallery(formData: FormData) {
     const date = formData.get("date") as string;
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
+    const coverImagePosition = formData.get("coverImagePosition") as string;
     const category = formData.get("category") as string;
     const slug = formData.get("slug") as string;
     const titleEn = formData.get("titleEn") as string;
@@ -271,6 +290,7 @@ export async function createGallery(formData: FormData) {
         date,
         password,
         coverImage,
+        coverImagePosition: coverImagePosition || 'center',
         category,
         slug: slug || undefined, // Save slug
         titleEn: titleEn || undefined,
@@ -304,6 +324,7 @@ export async function updateGallery(id: string, formData: FormData) {
     const date = formData.get("date") as string;
     const password = formData.get("password") as string;
     const coverImage = formData.get("coverImage") as string;
+    const coverImagePosition = formData.get("coverImagePosition") as string;
     const category = formData.get("category") as string;
     const slug = formData.get("slug") as string;
     const downloadable = formData.get("downloadable") === "on";
@@ -351,6 +372,7 @@ export async function updateGallery(id: string, formData: FormData) {
         date,
         password,
         coverImage,
+        coverImagePosition: coverImagePosition || existing.coverImagePosition || 'center',
         category,
         slug: slug || undefined, // Update slug
         titleEn: titleEn || undefined,
@@ -384,6 +406,7 @@ export async function updateGalleryMetadata(
         date: string;
         password?: string;
         coverImage: string;
+        coverImagePosition?: string;
         category?: string;
         slug?: string;
         titleEn?: string;
@@ -423,6 +446,7 @@ export async function updateGalleryMetadata(
             date: data.date,
             password: data.password || undefined,
             coverImage: data.coverImage,
+            coverImagePosition: data.coverImagePosition || existing.coverImagePosition || 'center',
             category: data.category,
             slug: data.slug || undefined,
             titleEn: data.titleEn || undefined,

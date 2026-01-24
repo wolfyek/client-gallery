@@ -16,6 +16,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [ncLink, setNcLink] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const [coverImage, setCoverImage] = useState(gallery?.coverImage || "");
+    const [coverImagePosition, setCoverImagePosition] = useState(gallery?.coverImagePosition || "center");
     const [downloadable, setDownloadable] = useState(gallery?.downloadable ?? true);
     const isEditing = !!gallery;
 
@@ -148,6 +149,38 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     {coverImage && (
                         <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden border border-white/20">
                             <Image src={coverImage} fill alt="Cover" className="object-cover" unoptimized />
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-widest text-white/50 font-dm">Pozicija Cover Slike</label>
+                    <select
+                        name="coverImagePosition"
+                        value={coverImagePosition}
+                        onChange={(e) => setCoverImagePosition(e.target.value)}
+                        className="w-full h-10 px-3 rounded-md bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/20 font-dm appearance-none"
+                    >
+                        <option value="center" className="bg-[#121212]">Center (Privzeto)</option>
+                        <option value="top" className="bg-[#121212]">Zgoraj</option>
+                        <option value="bottom" className="bg-[#121212]">Spodaj</option>
+                        <option value="left" className="bg-[#121212]">Levo</option>
+                        <option value="right" className="bg-[#121212]">Desno</option>
+                        <option value="50% 20%" className="bg-[#121212]">Malo višje (50% 20%)</option>
+                    </select>
+                    {coverImage && (
+                        <div className="mt-2">
+                            <p className="text-[10px] text-white/30 font-dm mb-1">Predogled:</p>
+                            <div className="relative w-full h-40 rounded overflow-hidden border border-white/20">
+                                <Image
+                                    src={coverImage}
+                                    fill
+                                    alt="Cover Preview"
+                                    className="object-cover"
+                                    style={{ objectPosition: coverImagePosition }}
+                                    unoptimized
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
