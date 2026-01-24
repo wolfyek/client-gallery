@@ -10,7 +10,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Reorder } from "framer-motion";
 
-import { ArrowDownAZ, CalendarClock } from "lucide-react";
+import { ArrowDownAZ, CalendarClock, RefreshCw } from "lucide-react";
 
 export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [photos, setPhotos] = useState<Photo[]>(gallery?.photos || []);
@@ -24,18 +24,50 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
     const [hasPhotosChanged, setHasPhotosChanged] = useState(false);
 
+    const [isDragging, setIsDragging] = useState(false);
+
     const handleNextcloudImport = async () => {
         if (!ncLink) return;
         setIsImporting(true);
         try {
             const newPhotos = await importFromNextcloud(ncLink);
             setPhotos([...photos, ...newPhotos]);
-            setHasPhotosChanged(true); // Mark as changed
+            setHasPhotosChanged(true);
             setNcLink("");
             alert(`Uspešno uvoženih ${newPhotos.length} slik!`);
         } catch (e) {
             alert("Napaka pri uvozu. Preveri povezavo.");
             console.error(e);
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    const handleUpdateMetadata = async () => {
+        if (!ncLink) {
+            alert("Prilepi Nextcloud link v polje 'Uvozi', da osvežim podatke!");
+            return;
+        }
+        setIsImporting(true);
+        try {
+            const importedPhotos = await importFromNextcloud(ncLink);
+            let updatedCount = 0;
+
+            const updatedPhotos = photos.map(p => {
+                // Find matching photo in import (by filename)
+                const match = importedPhotos.find(ip => ip.alt === p.alt || ip.src.endsWith(p.alt));
+                if (match && match.dateTaken) {
+                    updatedCount++;
+                    return { ...p, dateTaken: match.dateTaken };
+                }
+                return p;
+            });
+
+            setPhotos(updatedPhotos);
+            setHasPhotosChanged(true);
+            alert(`Posodobljeni podatki za ${updatedCount} slik.`);
+        } catch (e) {
+            alert("Napaka pri posodabljanju.");
         } finally {
             setIsImporting(false);
         }
@@ -51,24 +83,36 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
             alt: "Nova Slika"
         };
         setPhotos([...photos, newPhoto]);
-        setHasPhotosChanged(true); // Mark as changed
+        setHasPhotosChanged(true);
         setNewPhotoUrl("");
     };
 
     const removePhoto = (id: string) => {
         setPhotos(photos.filter(p => p.id !== id));
-        setHasPhotosChanged(true); // Mark as changed
+        setHasPhotosChanged(true);
     };
 
     const handleSortByDate = () => {
         const sorted = [...photos].sort((a, b) => {
-            // Priority: DateTaken metadata -> Filename (assuming sequential naming)
+            // 1. Metadata Date
             const dateA = a.dateTaken ? new Date(a.dateTaken).getTime() : 0;
             const dateB = b.dateTaken ? new Date(b.dateTaken).getTime() : 0;
+            if (dateA !== dateB) return dateA - dateB;
 
-            if (dateA && dateB) return dateA - dateB;
+            // 2. Regex Parse from Filename (YYYYMMDD or YYYY-MM-DD or YYYY_MM_DD)
+            // Matches 20231024, 2023-10-24, 2023_10_24
+            const dateRegex = /(20\d{2})[-_]?(\d{2})[-_]?(\d{2})/;
+            const matchA = a.alt.match(dateRegex);
+            const matchB = b.alt.match(dateRegex);
 
-            // Fallback to filename sorting (often correlates with date)
+            if (matchA && matchB) {
+                // Construct ISO strings roughly
+                const timeA = new Date(`${matchA[1]}-${matchA[2]}-${matchA[3]}`).getTime();
+                const timeB = new Date(`${matchB[1]}-${matchB[2]}-${matchB[3]}`).getTime();
+                if (timeA !== timeB) return timeA - timeB;
+            }
+
+            // 3. Fallback: Numeric aware filename sort
             return a.alt.localeCompare(b.alt, undefined, { numeric: true, sensitivity: 'base' });
         });
         setPhotos(sorted);
@@ -83,17 +127,34 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
         setHasPhotosChanged(true);
     }
 
-    const handleCoverClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Visual positioning logic
+    // Drag Logic for Cover Image
+    const handleCoverMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleCoverMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isDragging) return;
+
         const rect = e.currentTarget.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
 
-        // Round to nearest integer for cleanliness
-        const xPos = Math.round(x);
-        const yPos = Math.round(y);
+        setCoverImagePosition(`${Math.round(x)}% ${Math.round(y)}%`);
+    };
 
-        setCoverImagePosition(`${xPos}% ${yPos}%`);
+    const handleCoverMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleCoverClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Fallback for simple clicks if not dragging
+        if (!isDragging) {
+            // existing logic? No, let's reuse mouse move logic logic but for click
+            // Actually, standardizing on "Click/Drag to set center" is easiest.
+            // Just calling move once acts as click.
+            handleCoverMouseMove(e);
+        }
     };
 
 
@@ -206,31 +267,44 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     {coverImage && (
                         <div className="mt-2">
                             <p className="text-[10px] text-white/30 font-dm mb-1">
-                                Klikni na sliko, da nastaviš točko fokusa (rdeča pika).
+                                Klikni in povleci (Drag), da premikaš sliko znotraj okvirja.
                             </p>
                             <div
-                                className="relative w-full h-64 rounded overflow-hidden border border-white/20 cursor-crosshair group"
+                                className="relative w-full h-64 rounded overflow-hidden border border-white/20 cursor-move group touch-none"
+                                onMouseDown={handleCoverMouseDown}
+                                onMouseMove={handleCoverMouseMove}
+                                onMouseUp={handleCoverMouseUp}
+                                onMouseLeave={handleCoverMouseUp}
                                 onClick={handleCoverClick}
                             >
                                 <Image
                                     src={coverImage}
                                     fill
                                     alt="Cover Preview"
-                                    className="object-cover transition-opacity duration-200"
+                                    className="object-cover transition-none pointer-events-none select-none"
                                     style={{ objectPosition: coverImagePosition }}
                                     unoptimized
                                 />
-                                {/* Overlay crosshair for visual feedback of click location isn't really possible without inverse calculation, 
-                                    but we can show a Center Marker relative to the container based on position? 
-                                    Actually, object-position moves the image. 
-                                    Let's just show a static centered safe-zone or just reliance on the image moving.
-                                    Better: Show a small red dot representing the "Center" if we could traverse coordinate space, 
-                                    but object-position shifts the image content relative to the box. 
-                                    So if I click top-left (0% 0%), the top-left of the image aligns with top-left of box.
-                                */}
-                                <div className="absolute inset-0 border-2 border-white/0 group-hover:border-white/20 transition-all pointer-events-none" />
+
+                                {/* Grid overlay for better focus */}
+                                <div className="absolute inset-0 pointer-events-none opacity-20">
+                                    <div className="w-full h-full grid grid-cols-3 grid-rows-3">
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                        <div className="border border-white/30"></div>
+                                    </div>
+                                </div>
+
+                                <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur font-mono">
+                                    {coverImagePosition}
+                                </div>
                             </div>
-                            <p className="text-[10px] text-white/30 mt-1 font-mono text-right">Točka: {coverImagePosition}</p>
                         </div>
                     )}
                 </div>
@@ -306,8 +380,11 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                         placeholder="https://cloud.yoursite.com/s/Token..."
                         className="bg-black/20 border-blue-500/20 font-dm"
                     />
-                    <Button type="button" onClick={handleNextcloudImport} disabled={isImporting} className="bg-blue-600 hover:bg-blue-500 text-white min-w-[120px] font-dm">
+                    <Button type="button" onClick={handleNextcloudImport} disabled={isImporting} className="bg-blue-600 hover:bg-blue-500 text-white min-w-[100px] font-dm">
                         {isImporting ? 'Nalagam...' : 'Uvozi'}
+                    </Button>
+                    <Button type="button" onClick={handleUpdateMetadata} disabled={isImporting} className="bg-green-600 hover:bg-green-500 text-white font-dm" title="Refresh Dates/Metadata">
+                        <RefreshCw className={`w-4 h-4 ${isImporting ? 'animate-spin' : ''}`} />
                     </Button>
                 </div>
                 <p className="text-[10px] text-white/30 font-dm">

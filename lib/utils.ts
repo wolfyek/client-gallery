@@ -73,7 +73,7 @@ export function resolveNextcloudUrl(url: string | undefined): string {
             const cleanServer = server.replace(/\/$/, "");
             const cleanPath = path.startsWith('/') ? path : `/${path}`;
 
-            return `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&x=1920&y=1080&a=true&scalingup=0`;
+            return `${cleanServer}/index.php/apps/files_sharing/publicpreview/${token}?file=${encodeURIComponent(cleanPath)}&x=3000&y=3000&a=true&scalingup=0`;
         }
     } catch (e) {
         console.error("Failed to resolve Nextcloud URL", e);
