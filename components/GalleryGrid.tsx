@@ -410,7 +410,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                     )}
 
                                     <img
-                                        src={resolveNextcloudUrl(selectedPhoto.previewSrc || selectedPhoto.src)}
+                                        src={resolveNextcloudUrl(selectedPhoto.src)}
                                         alt={selectedPhoto.alt}
                                         className="w-auto h-auto max-w-full max-h-[85vh] object-contain shadow-2xl block select-none"
                                         onLoad={() => {
@@ -497,14 +497,14 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
             {selectedPhoto && (
                 <div className="hidden">
                     <Image
-                        src={resolveNextcloudUrl(nextPhoto.previewSrc || nextPhoto.src)}
+                        src={resolveNextcloudUrl(nextPhoto.src)}
                         alt="preload next"
                         width={100} height={100}
                         unoptimized
                         priority
                     />
                     <Image
-                        src={resolveNextcloudUrl(prevPhoto.previewSrc || prevPhoto.src)}
+                        src={resolveNextcloudUrl(prevPhoto.src)}
                         alt="preload prev"
                         width={100} height={100}
                         unoptimized
