@@ -19,7 +19,11 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const [isImporting, setIsImporting] = useState(false);
     const [coverImage, setCoverImage] = useState(gallery?.coverImage || "");
     const [downloadable, setDownloadable] = useState(gallery?.downloadable ?? true);
+    const [isHidden, setIsHidden] = useState(gallery?.hidden ?? false);
     const isEditing = !!gallery;
+
+    // Multi-select state
+    const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
 
     const [hasPhotosChanged, setHasPhotosChanged] = useState(false);
 
@@ -73,6 +77,33 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
     const removePhoto = (id: string) => {
         setPhotos(photos.filter(p => p.id !== id));
         setHasPhotosChanged(true);
+        if (selectedPhotos.has(id)) {
+            const next = new Set(selectedPhotos);
+            next.delete(id);
+            setSelectedPhotos(next);
+        }
+    };
+
+    const toggleSelection = (id: string) => {
+        const next = new Set(selectedPhotos);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedPhotos(next);
+    };
+
+    const handleMoveToBottom = () => {
+        const selected = photos.filter(p => selectedPhotos.has(p.id));
+        const unselected = photos.filter(p => !selectedPhotos.has(p.id));
+        setPhotos([...unselected, ...selected]);
+        setHasPhotosChanged(true);
+        // Keep selection active
+    };
+
+    const handleBulkDelete = () => {
+        if (!confirm(`Ali ste prepričani, da želite izbrisati ${selectedPhotos.size} slik?`)) return;
+        setPhotos(photos.filter(p => !selectedPhotos.has(p.id)));
+        setHasPhotosChanged(true);
+        setSelectedPhotos(new Set());
     };
 
 
@@ -97,6 +128,7 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                     descriptionEn: formData.get("descriptionEn") as string,
                     slugEn: formData.get("slugEn") as string,
                     downloadable: downloadable,
+                    hidden: isHidden,
                 });
                 if (result.success) {
                     alert('Galerija uspešno posodobljena!');
@@ -239,6 +271,19 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                         Dovoli Prenose (Download)
                     </label>
                 </div>
+                <div className="space-y-2 flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-4 mt-2 h-[50px]">
+                    <Input
+                        type="checkbox"
+                        name="hidden"
+                        value="on"
+                        checked={isHidden}
+                        onChange={(e) => setIsHidden(e.target.checked)}
+                        className="w-5 h-5 accent-red-500 cursor-pointer"
+                    />
+                    <label className="text-xs uppercase tracking-widest text-white/70 font-dm cursor-pointer" onClick={() => setIsHidden(!isHidden)}>
+                        Skrij galerijo (dostopna le preko linka)
+                    </label>
+                </div>
             </div>
 
             {/* Nextcloud Import */}
@@ -274,7 +319,30 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
 
             {/* Photo Manager */}
             <div className="border-t border-white/10 pt-8 space-y-4">
-                <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
+                    {selectedPhotos.size > 0 && (
+                        <div className="flex gap-2 animate-in fade-in slide-in-from-right-5">
+                            <span className="text-sm font-mono self-center mr-2 text-white/60">{selectedPhotos.size} izbranih</span>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleMoveToBottom}
+                                className="bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                            >
+                                <ArrowDownAZ className="w-4 h-4 mr-2" /> Na dno
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleBulkDelete}
+                                className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/20"
+                            >
+                                <X className="w-4 h-4 mr-2" /> Izbriši
+                            </Button>
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex gap-2 flex-wrap">
                     <Input
@@ -292,12 +360,18 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                             if (window.confirm("Ali ste prepričani, da želite izbrisati VSE fotografije iz te galerije? Tega ni mogoče razveljaviti (razen če ne shranite).")) {
                                 setPhotos([]);
                                 setHasPhotosChanged(true);
+                                setSelectedPhotos(new Set());
                             }
                         }}
                         className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 font-dm whitespace-nowrap"
                     >
                         <X className="w-4 h-4 mr-2" /> Izbriši vse slike
                     </Button>
+                </div>
+
+                <div className="flex gap-2 mb-2">
+                    <Button type="button" size="sm" onClick={() => setSelectedPhotos(new Set(photos.map(p => p.id)))} className="text-xs bg-transparent border border-white/10 text-white/50 hover:text-white">Izberi vse</Button>
+                    <Button type="button" size="sm" onClick={() => setSelectedPhotos(new Set())} className="text-xs bg-transparent border border-white/10 text-white/50 hover:text-white">Počisti izbor</Button>
                 </div>
 
                 <Reorder.Group
@@ -312,16 +386,29 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                 >
                     {photos.map((photo) => {
                         const isCover = coverImage === photo.src || coverImage === photo.previewSrc;
+                        const isSelected = selectedPhotos.has(photo.id);
+
                         return (
                             <Reorder.Item
                                 key={photo.id}
                                 value={photo}
                                 className={cn(
                                     "relative aspect-square group rounded-md overflow-hidden transition-all border-2 cursor-grab active:cursor-grabbing",
-                                    isCover ? "border-green-500" : "border-transparent bg-white/5"
+                                    isSelected ? "border-blue-500 ring-2 ring-blue-500/50 z-10 scale-[0.98]" : (isCover ? "border-green-500" : "border-transparent bg-white/5")
                                 )}
+                                onClick={() => {
+                                    // Toggle selection on click (if not dragging or clicking button)
+                                    // preventDefault logic handled by buttons themselves
+                                    toggleSelection(photo.id);
+                                }}
                             >
                                 <Image src={photo.previewSrc || photo.src} alt="preview" fill className={cn("object-cover transition-opacity pointer-events-none", isCover ? "opacity-100" : "opacity-70 group-hover:opacity-100")} unoptimized />
+
+                                {isSelected && (
+                                    <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in">
+                                        <Check className="w-4 h-4 text-white" />
+                                    </div>
+                                )}
 
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                                     {!isCover && (
@@ -329,17 +416,18 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
                                             type="button"
                                             size="sm"
                                             onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
-                                            onClick={() => setCoverImage(photo.previewSrc || photo.src)}
+                                            onClick={(e) => { e.stopPropagation(); setCoverImage(photo.previewSrc || photo.src); }}
                                             className="bg-white/20 hover:bg-white text-white hover:text-black gap-2 text-xs uppercase tracking-wider"
                                         >
                                             <Star className="w-3 h-3" /> Cover
                                         </Button>
                                     )}
+                                    {/* Only show single delete if not in multi-selection mode (or maybe always show?) */}
                                     <Button
                                         type="button"
                                         size="sm"
                                         onPointerDown={(e) => e.stopPropagation()} // Prevent drag start
-                                        onClick={() => removePhoto(photo.id)}
+                                        onClick={(e) => { e.stopPropagation(); removePhoto(photo.id); }}
                                         className="bg-red-500/20 hover:bg-red-500 text-white gap-2 text-xs uppercase tracking-wider"
                                     >
                                         <X className="w-3 h-3" /> Brisi

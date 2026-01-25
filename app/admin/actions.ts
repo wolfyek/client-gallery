@@ -249,6 +249,7 @@ export async function createGallery(formData: FormData) {
     const descriptionEn = formData.get("descriptionEn") as string;
     const slugEn = formData.get("slugEn") as string;
     const downloadable = formData.get("downloadable") === "on";
+    const hidden = formData.get("hidden") === "on";
     const idStr = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
     // Validate ID Uniqueness (The auto-generated ID from Title)
@@ -297,6 +298,7 @@ export async function createGallery(formData: FormData) {
         descriptionEn: descriptionEn || undefined,
         slugEn: slugEn || undefined,
         downloadable,
+        hidden,
         photos
     };
 
@@ -328,6 +330,7 @@ export async function updateGallery(id: string, formData: FormData) {
     const category = formData.get("category") as string;
     const slug = formData.get("slug") as string;
     const downloadable = formData.get("downloadable") === "on";
+    const hidden = formData.get("hidden") === "on";
     const titleEn = formData.get("titleEn") as string;
     const descriptionEn = formData.get("descriptionEn") as string;
     const slugEn = formData.get("slugEn") as string;
@@ -379,6 +382,7 @@ export async function updateGallery(id: string, formData: FormData) {
         descriptionEn: descriptionEn || undefined,
         slugEn: slugEn || undefined,
         downloadable,
+        hidden,
         photos
     };
 
@@ -413,6 +417,7 @@ export async function updateGalleryMetadata(
         descriptionEn?: string;
         slugEn?: string;
         downloadable: boolean;
+        hidden?: boolean;
         description?: string;
     }
 ) {
@@ -453,6 +458,7 @@ export async function updateGalleryMetadata(
             descriptionEn: data.descriptionEn || undefined,
             slugEn: data.slugEn || undefined,
             downloadable: data.downloadable,
+            hidden: data.hidden,
             description: data.description || "",
         };
 

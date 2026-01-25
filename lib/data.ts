@@ -22,5 +22,6 @@ export type Gallery = {
     titleEn?: string; // English Title
     descriptionEn?: string; // English Description
     slugEn?: string; // English URL Slug
+    hidden?: boolean; // If true, hidden from homepage lists
     photos: Photo[];
 };
