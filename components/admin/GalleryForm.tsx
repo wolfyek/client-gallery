@@ -276,15 +276,27 @@ export default function GalleryForm({ gallery }: { gallery?: Gallery }) {
             <div className="border-t border-white/10 pt-8 space-y-4">
                 <h3 className="text-lg font-bold uppercase">Fotografije ({photos.length})</h3>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <Input
                         value={newPhotoUrl}
                         onChange={(e) => setNewPhotoUrl(e.target.value)}
                         placeholder="Prilepi URL slike (npr. Unsplash/Imgur)"
-                        className="bg-white/5 border-white/10 font-dm"
+                        className="bg-white/5 border-white/10 font-dm flex-grow"
                     />
-                    <Button type="button" onClick={handleAddPhoto} className="bg-white text-black font-dm">
-                        <Plus className="w-4 h-4" /> Dodaj
+                    <Button type="button" onClick={handleAddPhoto} className="bg-white text-black font-dm whitespace-nowrap">
+                        <Plus className="w-4 h-4 mr-2" /> Dodaj
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            if (window.confirm("Ali ste prepričani, da želite izbrisati VSE fotografije iz te galerije? Tega ni mogoče razveljaviti (razen če ne shranite).")) {
+                                setPhotos([]);
+                                setHasPhotosChanged(true);
+                            }
+                        }}
+                        className="bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 font-dm whitespace-nowrap"
+                    >
+                        <X className="w-4 h-4 mr-2" /> Izbriši vse slike
                     </Button>
                 </div>
 
