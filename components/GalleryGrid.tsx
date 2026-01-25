@@ -30,11 +30,14 @@ const slideVariants = {
     })
 };
 
-export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true, lang = 'sl' }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean, lang?: Language }) {
+export default function GalleryGrid({ photos, galleryTitle, allowDownloads = true, lang = 'sl', slug }: { photos: Photo[], galleryTitle: string, allowDownloads?: boolean, lang?: Language, slug?: string }) {
     const t = getTranslation(lang);
     const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
     const [direction, setDirection] = useState(0);
     const [viewMode, setViewMode] = useState<'grid' | 'large' | 'compact'>('grid');
+
+    // Identify if this is the problematic Judo gallery
+    const isJudoGallery = slug === '50-pokal-lendave-judo-klub-lendava';
 
     // Image Loading State
     const [isImageLoading, setIsImageLoading] = useState(true);
@@ -281,7 +284,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                     >
                         {/* 16:10 Aspect Ratio Container */}
                         <div
-                            className="relative aspect-[16/10] w-full overflow-hidden"
+                            className="relative aspect-[16/10] w-full overflow-hidden bg-black"
                         >
                             <Image
                                 src={resolveNextcloudUrl(photo.previewSrc || photo.src)}
@@ -290,7 +293,7 @@ export default function GalleryGrid({ photos, galleryTitle, allowDownloads = tru
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 priority={i < 4}
                                 unoptimized
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                className={`${isJudoGallery ? 'object-contain' : 'object-cover'} transition-transform duration-500 group-hover:scale-105`}
                             />
                             {/* Overlay */}
                             <div

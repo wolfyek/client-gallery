@@ -106,6 +106,7 @@ export default function GalleryClient({ gallery, lang = 'sl' }: GalleryClientPro
                 galleryTitle={displayTitle}
                 allowDownloads={gallery.downloadable ?? true}
                 lang={lang}
+                slug={gallery.slug}
             />
         </main>
     );
