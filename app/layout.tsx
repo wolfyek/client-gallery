@@ -31,6 +31,8 @@ export const metadata: Metadata = {
 
 import PreventZoom from "@/components/PreventZoom";
 
+import Script from "next/script";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -39,6 +41,19 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${bigShoulders.variable} ${dmSans.variable} font-sans antialiased min-h-screen flex flex-col select-none`}>
+                <Script
+                    src="https://www.googletagmanager.com/gtag/js?id=G-1VCLMETGR7"
+                    strategy="afterInteractive"
+                />
+                <Script id="google-analytics" strategy="afterInteractive">
+                    {`
+                      window.dataLayer = window.dataLayer || [];
+                      function gtag(){dataLayer.push(arguments);}
+                      gtag('js', new Date());
+
+                      gtag('config', 'G-1VCLMETGR7');
+                    `}
+                </Script>
                 <PreventZoom />
                 {children}
 
